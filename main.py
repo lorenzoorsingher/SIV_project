@@ -9,4 +9,4 @@ while True:
     ret, frame = cap.read()
 
     cv.imshow("frame", frame)
-    cv.waitKey(0)
+    cv.waitKey(0) #ciaone
