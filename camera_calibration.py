@@ -51,19 +51,87 @@ def get_corners_charuco(image):
 
         return corners, ids, imsize
 
+def calibrate_camera( allCorners, allIds, imsize):
+        """
+        - allCorners:   list where every element is a list of points corresponding to
+                        the corners detected in a single frame during the capturing
+        - allIds:   list where every element is a list of the IDs corresponding to
+                    the corners in the allCorners list
+        - imsize:   image size
+        - board:    charuco board object
+
+        Run the camera calibration algorithm using the datapoints extracted previously
+        from the charco dump json file. Intrinsic guess is used to try and help
+        converge faster to the optimal intrinsic matrix
+        """
+
+        print("[intrinsic calibration] starting...")
+
+        cameraMatrixInit = np.array(
+            [
+                [1000., 0.0, imsize[0] / 2.0],
+                [0.0, 1000., imsize[1] / 2.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+
+        distCoeffsInit = np.zeros((5, 1))
+        flags = cv.CALIB_USE_INTRINSIC_GUESS
+        #breakpoint()
+        (
+            ret,
+            camera_matrix,
+            distortion_coefficients0,
+            rotation_vectors,
+            translation_vectors,
+            stdDeviationsIntrinsics,
+            stdDeviationsExtrinsics,
+            perViewErrors,
+        ) = cv.aruco.calibrateCameraCharucoExtended(
+            charucoCorners=allCorners,
+            charucoIds=allIds,
+            board=board,
+            imageSize=imsize,
+            cameraMatrix=cameraMatrixInit,
+            distCoeffs=distCoeffsInit,
+            flags=flags,
+            criteria=(cv.TERM_CRITERIA_EPS & cv.TERM_CRITERIA_COUNT, 100, 0.00001),
+        )
+
+        print("[intrinsic calibration] finished.")
+
+        return (
+            ret,
+            camera_matrix,
+            distortion_coefficients0,
+            rotation_vectors,
+            translation_vectors,
+        )
+
 
 video_path = "data/VID_20231205_132133.mp4"
 cap = cv.VideoCapture(video_path)
 
 cv.namedWindow("frame", cv.WINDOW_NORMAL)
 
-while True:
+allCorners = []
+allIds = []
+while cap.isOpened():
      
-     ret, frame = cap.read()
+    ret, frame = cap.read()
+    if ret is False:
+         break
+    corners, ids, imsize = get_corners_charuco(frame)
+    allCorners.append(corners)
+    allIds.append(ids)
+    frame = cv.aruco.drawDetectedCornersCharuco(frame, corners, ids, (0,0,255))
 
-     corners, ids, imsize = get_corners_charuco(frame)
+    if False:
+        cv.imshow("frame", frame)
+        cv.waitKey(1)
 
-     frame = cv.aruco.drawDetectedCornersCharuco(frame, corners, ids, (0,0,255))
+#allCorners = np.array(allCorners,dtype=np.float32)
 
-     cv.imshow("frame", frame)
-     cv.waitKey(1)
+ret, camera_matrix, distortion_coefficients,_,_=calibrate_camera(allCorners=allCorners,allIds=allIds,imsize=imsize)
+
+breakpoint()
