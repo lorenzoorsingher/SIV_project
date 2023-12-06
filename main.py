@@ -11,10 +11,13 @@ cv.namedWindow("frame", cv.WINDOW_NORMAL)
 
 
 ret, prevFrame = cap.read()
-while True:
+while cap.isOpened():
 
     ret, newFrame = cap.read()
-
+    if not ret:
+        cap.set(cv.CAP_PROP_POS_FRAMES,0)
+        ret, newFrame = cap.read()
+        
     img1 = cv.cvtColor(prevFrame, cv.COLOR_BGR2GRAY)
     img2 = cv.cvtColor(newFrame, cv.COLOR_BGR2GRAY)
     # Initiate ORB detector
@@ -27,7 +30,10 @@ while True:
     # Match descriptors.
     matches = bf.match(des1,des2)
     # Sort them in the order of their distance.
-    matches = sorted(matches, key = lambda x:x.distance)
+    FLANN_INDEX_KDTREE = 1
+    index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+    search_params = dict(checks=50) # or pass empty dictionary
+    flann = cv.FlannBasedMatcher(index_params,search_params)
     #breakpoint()
 
     # Apply ratio test
@@ -48,6 +54,6 @@ while True:
 
     #cv.imshow("frame", np.hstack([frame1,frame2]))
 
-    cv.waitKey(0)
+    cv.waitKey(1)
 
     prevFrame = newFrame
