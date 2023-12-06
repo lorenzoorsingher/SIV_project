@@ -16,6 +16,7 @@ while cap.isOpened():
     ret, newFrame = cap.read()
     if not ret:
         cap.set(cv.CAP_PROP_POS_FRAMES,0)
+        ret, newFrame = cap.read()
     img1 = cv.cvtColor(prevFrame, cv.COLOR_BGR2GRAY)
     img2 = cv.cvtColor(newFrame, cv.COLOR_BGR2GRAY)
     # Initiate ORB detector
@@ -43,6 +44,7 @@ while cap.isOpened():
 
     pFrame1 = [kp1[g[0].queryIdx] for g in good]
     pFrame2 = [kp2[g[0].trainIdx] for g in good]
+
 
 
 
