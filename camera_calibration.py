@@ -110,7 +110,7 @@ def calibrate_camera( allCorners, allIds, imsize):
         )
 
 
-video_path = "data/board_calib_1.mp4"
+video_path = "data/room_calib.MOV"
 calib_path = "camera_data/calib.json"
 cap = cv.VideoCapture(video_path)
 
@@ -131,7 +131,7 @@ while cap.isOpened():
             allIds.append(ids)
             frame = cv.aruco.drawDetectedCornersCharuco(frame, corners, ids, (0,0,255))
 
-    if False:
+    if True:
         cv.imshow("frame", frame)
         cv.waitKey(1)
 
