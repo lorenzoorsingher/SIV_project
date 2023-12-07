@@ -131,9 +131,9 @@ while cap.isOpened():
             allIds.append(ids)
             frame = cv.aruco.drawDetectedCornersCharuco(frame, corners, ids, (0,0,255))
 
-    if True:
+    if False:
         cv.imshow("frame", frame)
-        cv.waitKey(1)
+        cv.waitKey(0)
 
 #allCorners = np.array(allCorners,dtype=np.float32)
 
@@ -146,8 +146,7 @@ idxes = np.random.choice(
 for inx in idxes:
     corners.append(allCorners[inx])
     ids.append(allIds[inx])
-ret, camera_matrix, distortion_coefficients,_,_=calibrate_camera(allCorners=corners,allIds=ids,imsize=imsize)
-
+ret, camera_matrix, distortion_coefficients,R,t=calibrate_camera(allCorners=corners,allIds=ids,imsize=imsize)
 
 with open(calib_path, "w", encoding="utf-8") as f:
     json.dump([camera_matrix.tolist(), distortion_coefficients.tolist()], f, ensure_ascii=False, indent=4)
