@@ -2,14 +2,32 @@ import cv2 as cv
 import numpy as np
 import json
 import pdb
-
-video_path = "data/walk_buc.mp4"
+import math
+from common import *
+from copy import copy
+video_path = "data/room_tour.MOV"
 cap = cv.VideoCapture(video_path)
 
 
 cv.namedWindow("frame", cv.WINDOW_NORMAL)
 
-
+def rotationMatrixToEulerAngles(R) :
+ 
+ 
+    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+ 
+    singular = sy < 1e-6
+ 
+    if  not singular :
+        x = math.atan2(R[2,1] , R[2,2])
+        y = math.atan2(-R[2,0], sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else :
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0], sy)
+        z = 0
+ 
+    return np.array([x, y, z])
 
 def ORB_BF(img1, img2):
     orb = cv.ORB_create()
@@ -61,43 +79,103 @@ def ORB_FLANN(img1, img2):
 
     # Store the Keypoint Matches that Pass Lowe's Ratio Test
     good = []
-    for m, n in matches:
-        if m.distance < 0.8*n.distance:
-            good.append([m])
+
+    for i, pair in enumerate(matches):
+        try:
+            m, n = pair
+            if m.distance < 0.7*n.distance:
+                good.append([m])
+
+        except ValueError:
+            return [], []
 
     if True:
         #img3 = cv.drawMatchesKnn(img1,kp1,img2,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
         img3 = cv.drawMatchesKnn(img1,kp1,img2,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
         cv.namedWindow("ORB",cv.WINDOW_NORMAL)
         cv.imshow("ORB",img3)
-
+    pFrame1 = [kp1[g[0].queryIdx].pt for g in good]
+    pFrame2 = [kp2[g[0].trainIdx].pt for g in good]
+    return pFrame1, pFrame2
 calib_path = "camera_data/calib.json"
 
 data = json.load(open(calib_path))
 mtx = np.array(data[0])
 dist = np.array(data[1])
+proj = np.hstack([mtx, np.array([[0],[0],[0]])])
 
 
-
-
+cumul_t = np.array([0,0,0], dtype=np.float64)
+cumul_R = np.array([0,0,0], dtype=np.float64)
 
 ret, prevFrame = cap.read()
+
+track_map = np.zeros((600,600,3))
+cv.namedWindow("map", cv.WINDOW_NORMAL)
+
+
+frame_buffer = []
+
+for i in range(4):
+    ret, frm = cap.read()
+    frame_buffer.append(frm)
+
+
+cam_x = 0
+cam_y = 0
+
 while cap.isOpened():
 
-    ret, newFrame = cap.read()
+    # ret, newFrame = cap.read()
+    # if not ret:
+    #     cap.set(cv.CAP_PROP_POS_FRAMES,0)
+    #     ret, newFrame = cap.read()
+
+
+    firstFrame = frame_buffer.pop(0)
+    ret, lastFrame = cap.read()
     if not ret:
         cap.set(cv.CAP_PROP_POS_FRAMES,0)
-        ret, newFrame = cap.read()
-    img1 = cv.cvtColor(prevFrame, cv.COLOR_BGR2GRAY)
-    img2 = cv.cvtColor(newFrame, cv.COLOR_BGR2GRAY)
+        ret, lastFrame = cap.read()
+
+    frame_buffer.append(lastFrame)
+
+    img1 = cv.cvtColor(firstFrame, cv.COLOR_BGR2GRAY)
+    img2 = cv.cvtColor(lastFrame, cv.COLOR_BGR2GRAY)
     
-    pFrame1, pFrame2 = ORB_BF(img1,img2)
+    uimg1 = cv.undistort(img1, mtx, dist)
+    uimg2 = cv.undistort(img2, mtx, dist)
 
-    E, mask = cv.findEssentialMat(np.array(pFrame1, dtype=np.float32),np.array(pFrame2, dtype=np.float32),mtx,dist,mtx,dist,cv.RANSAC, 0.999, 1.0,)
+    pFrame1, pFrame2 = ORB_FLANN(uimg1,uimg2)
+    #print(pFrame1)
+    if len(pFrame1)>=6 and len(pFrame2) >= 6:
+        E, mask = cv.findEssentialMat(np.array(pFrame1, dtype=np.float32),np.array(pFrame2, dtype=np.float32),mtx,dist,mtx,dist,cv.RANSAC, 0.999, 1.0,)
 
-    breakpoint()
-    #cv.imshow("frame", np.hstack([frame1,frame2]))
+        R, t = decomp_essential_mat(E, np.array(pFrame1, dtype=np.float32),np.array(pFrame2, dtype=np.float32), mtx, proj)
+        #breakpoint()
+        if abs(t.mean()) < 10:
+            cumul_t += t
+            #breakpoint()
+            cumul_R += rotationMatrixToEulerAngles(R) 
+            #breakpoint()
+            y_r = np.sin(cumul_R[1]) * 100
+            x_r = np.cos(cumul_R[1]) * 100
 
-    cv.waitKey(1)
+            cam_y += np.sin(cumul_R[1]) * t[0] 
+            cam_x += np.cos(cumul_R[1]) * t[2] 
 
-    prevFrame = newFrame
+            print(np.sin(cumul_R[1]))
+
+            # track_map = cv.circle(track_map, (int(x_r)+300, int(y_r)+300), 1,(255,255,0),2)
+            #track_map = np.zeros((600,600))
+            track_map = cv.circle(track_map, (int(cam_x) + 300, int(cam_y)+300), 1,(255,255,0),2)
+            track_map_tmp = copy(track_map)
+            track_map_tmp = cv.line(track_map_tmp, (int(x_r)+int(cam_x)+300, int(y_r)+int(cam_y)+300), (int(cam_x)+300,int(cam_y)+300),(0,0,255),2)
+            #print(cumul_R)
+        #breakpoint()
+        if True:
+            #cv.imshow("frame", np.hstack([uimg1,uimg2]))
+            cv.imshow("map", track_map_tmp)
+            cv.waitKey(1)
+
+    #prevFrame = newFrame
