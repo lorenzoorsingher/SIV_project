@@ -158,11 +158,11 @@ while cap.isOpened():
             #breakpoint()
             cumul_R += rotationMatrixToEulerAngles(R) 
             #breakpoint()
-            y_r = np.sin(cumul_R[1]) * 100
-            x_r = np.cos(cumul_R[1]) * 100
+            y_r = -np.cos(cumul_R[1]) * 100
+            x_r = -np.sin(cumul_R[1]) * 100
 
-            cam_y += np.sin(cumul_R[1]) * t[0] 
-            cam_x += np.cos(cumul_R[1]) * t[2] 
+            cam_y += np.cos(cumul_R[1]) * t[0] 
+            cam_x += np.sin(cumul_R[1]) * t[2] 
 
             print(np.sin(cumul_R[1]))
 
