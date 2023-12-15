@@ -61,7 +61,7 @@ class Odometry:
         uimg1 = cv.undistort(img1, self.mtx, self.dist)
         uimg2 = cv.undistort(img2, self.mtx, self.dist)
 
-        pFrame1, pFrame2 = self.ORB_FLANN(uimg1, uimg2)
+        pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
 
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
             E, mask = cv.findEssentialMat(

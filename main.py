@@ -5,14 +5,13 @@ import pdb
 import math
 from common import *
 from copy import copy
-
+import os
 from odometry import Odometry
 
+
+calib_path = "camera_data/calib_tum.json"
+imgs_path = "data/sequence_14/images"
 video_path = "data/room_tour.MOV"
-cap = cv.VideoCapture(video_path)
-
-
-calib_path = "camera_data/calib.json"
 
 data = json.load(open(calib_path))
 mtx = np.array(data[0])
@@ -27,8 +26,23 @@ odo = Odometry(mtx, dist, 2)
 track_map = np.zeros((600, 600, 3))
 
 
-while cap.isOpened():
-    ret, frame = cap.read()
+MODE = "imgs"
+if MODE == "imgs":
+    im_paths = [imgs_path + "/" + name for name in os.listdir(imgs_path)]
+    im_paths.sort()
+    idx = 0
+if MODE == "video":
+    cap = cv.VideoCapture(video_path)
+
+
+while True:
+    if MODE == "video":
+        ret, frame = cap.read()
+    if MODE == "imgs":
+        frame = cv.imread(im_paths[idx])
+        idx += 1
+        ret = True
+
     if not ret:
         break
     odo.next_frame(frame)
