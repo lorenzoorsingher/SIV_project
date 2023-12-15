@@ -48,8 +48,6 @@ class Odometry:
 
         self.buf_size = buf_size
 
-        self.track_map = np.zeros((600, 600, 3))
-
     def next_frame(self, lastFrame):
         if len(self.frame_buffer) < self.buf_size:
             self.frame_buffer.append(lastFrame)
@@ -63,7 +61,7 @@ class Odometry:
         uimg1 = cv.undistort(img1, self.mtx, self.dist)
         uimg2 = cv.undistort(img2, self.mtx, self.dist)
 
-        pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
+        pFrame1, pFrame2 = self.ORB_FLANN(uimg1, uimg2)
 
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
             E, mask = cv.findEssentialMat(
@@ -90,38 +88,6 @@ class Odometry:
                 # breakpoint()
 
                 self.position.update_pos(R, t)
-
-                y_r = -np.cos(self.position.cumul_R[1]) * 100
-                x_r = -np.sin(self.position.cumul_R[1]) * 100
-
-                print(np.sin(self.position.cumul_R[1]))
-
-                # self.track_map = cv.circle(self.track_map, (int(x_r)+300, int(y_r)+300), 1,(255,255,0),2)
-                # self.track_map = np.zeros((600,600))
-                self.track_map = cv.circle(
-                    self.track_map,
-                    (int(self.position.x) + 300, int(self.position.y) + 300),
-                    1,
-                    (255, 255, 0),
-                    2,
-                )
-                self.track_map_tmp = copy(self.track_map)
-                self.track_map_tmp = cv.line(
-                    self.track_map_tmp,
-                    (
-                        int(x_r) + int(self.position.x) + 300,
-                        int(y_r) + int(self.position.y) + 300,
-                    ),
-                    (int(self.position.x) + 300, int(self.position.y) + 300),
-                    (0, 0, 255),
-                    2,
-                )
-                # print(cumul_R)
-            # breakpoint()
-            if True:
-                # cv.imshow("frame", np.hstack([uimg1,uimg2]))
-                cv.imshow("map", self.track_map_tmp)
-                cv.waitKey(1)
 
     def ORB_BF(self, img1, img2):
         orb = cv.ORB_create()

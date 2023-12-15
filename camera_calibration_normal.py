@@ -3,53 +3,34 @@ import numpy as np
 import json
 import pdb
 
-chessboard_size = [7, 5, 30, 22]
-aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
-board = cv.aruco.CharucoBoard(
-    (chessboard_size[0], chessboard_size[1]),
-    chessboard_size[2],
-    chessboard_size[3],
-    aruco_dict,
-)
+chessboard_size = [7, 5]
 
 
-def get_corners_charuco(image):
-    """
-    Charuco corners detection.
-    Run a marker detection for the charuco board, interpolates them
-    to get the chessboard corners and return two parallel arrays
-    containing the corners coordinates and corresponding corners IDs
-    """
-
-    # print("[corner detection] starting...")
-
-    # sub pixel corner detection criterion
-    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 100, 0.00001)
-
+def get_corners(image):
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    corners, ids, rejectedImgPoints = cv.aruco.detectMarkers(gray, aruco_dict)
-    imsize = None
-    if len(corners) > 0:
-        # sub pixel refinement
-        for corner in corners:
-            cv.cornerSubPix(
-                gray,
-                corner,
-                winSize=(3, 3),
-                zeroZone=(-1, -1),
-                criteria=criteria,
-            )
-        # interpolate charuco markers detections
-        res2 = cv.aruco.interpolateCornersCharuco(corners, ids, gray, board)
+    ret, corners = cv.findChessboardCorners(
+        gray,
+        chessboard_size,
+        cv.CALIB_CB_ADAPTIVE_THRESH
+        + cv.CALIB_CB_FAST_CHECK
+        + cv.CALIB_CB_NORMALIZE_IMAGE,
+    )
+    if ret == True:
+        # objpoints.append(objp)
+        # refining pixel coordinates for given 2d points.
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
 
-        if res2[1] is not None and res2[2] is not None and len(res2[1]) > 3:
-            corners = res2[1]
-            ids = res2[2]
-            imsize = gray.shape
+        # imgpoints.append(corners2)
 
+        # Draw and display the corners
+        img = cv.drawChessboardCorners(img, chessboard_size, corners2, ret)
+
+    cv.imshow("img", img)
+    cv.waitKey(1)
     # print("[corner detection] finished.")
 
-    return corners, ids, imsize
+    return corners
 
 
 def calibrate_camera(allCorners, allIds, imsize):
@@ -122,8 +103,8 @@ while cap.isOpened():
     ret, frame = cap.read()
     if ret is False:
         break
-    corners, ids, imsize = get_corners_charuco(frame)
-
+    corners = get_corners(frame)
+    breakpoint()
     if not isinstance(corners, tuple):
         if len(corners) >= 6:
             allCorners.append(corners)
