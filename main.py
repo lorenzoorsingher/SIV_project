@@ -72,6 +72,17 @@ while True:
         (0, 0, 255),
         2,
     )
+
+    track_map_tmp = cv.line(
+        track_map_tmp,
+        (
+            int(x_r) + 300,
+            int(y_r) + 500,
+        ),
+        (300, 500),
+        (0, 255, 0),
+        2,
+    )
     # print(cumul_R)
     # breakpoint()
     if True:

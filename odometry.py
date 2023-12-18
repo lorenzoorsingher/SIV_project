@@ -87,7 +87,15 @@ class Odometry:
             if abs(t.mean()) < 10:
                 # breakpoint()
 
-                self.position.update_pos(R, t)
+                newT = np.eye(4, dtype=np.float64)
+                newT[:3, :3] = R
+                newT[:3, 3] = t
+                newP = np.matmul(
+                    np.concatenate((self.mtx, np.zeros((3, 1))), axis=1), newT
+                )
+                self.proj = newP
+                print(t)
+                # self.position.update_pos(R, t)
 
     def ORB_BF(self, img1, img2):
         orb = cv.ORB_create()
