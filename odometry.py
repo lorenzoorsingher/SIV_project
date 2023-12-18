@@ -94,7 +94,7 @@ class Odometry:
                     np.concatenate((self.mtx, np.zeros((3, 1))), axis=1), newT
                 )
                 self.proj = newP
-                print(t)
+                # print(t)
                 # self.position.update_pos(R, t)
 
     def ORB_BF(self, img1, img2):
