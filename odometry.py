@@ -27,6 +27,22 @@ class Position:
         tmpT = np.eye(4, 4)
         tmpT[:3, :3] = R
         tmpT[:3, 3] = t
+
+        eulered = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
+
+        sizestr = "#"
+        for i in range(int(abs(eulered[1])) // 1):
+            sizestr += "#"
+
+        if abs(eulered[1]) >= 10:
+            R = np.eye(3, 3)
+            t *= 0
+            sizestr2 = ""
+            for i in range(len(sizestr)):
+                sizestr2 += "X"
+            sizestr = sizestr2
+
+        print(sizestr)
         curr_coo = np.array([self.x, self.y, self.z, 1])
         self.x, self.y, self.z, _ = np.dot(tmpT, curr_coo)
 
