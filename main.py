@@ -17,9 +17,9 @@ imgs_path = "data/sequence_14/images"
 calib_path = "camera_data/calib.json"
 maxdist = 300
 
-cv.namedWindow("track_map", cv.WINDOW_NORMAL)
+# cv.namedWindow("track_map", cv.WINDOW_NORMAL)
 cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
-cv.namedWindow("updated_track_map2", cv.WINDOW_NORMAL)
+# cv.namedWindow("updated_track_map2", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
@@ -140,8 +140,9 @@ while True:
 
     if True:
         # cv.imshow("frame", np.hstack([uimg1,uimg2]))
-        cv.imshow("gt_map", updated_gt_map)
+        cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map2]))
         # cv.imshow("track_map", updated_track_map)
-        cv.imshow("updated_track_map2", updated_track_map2)
+        # cv.imshow("updated_track_map2", updated_track_map2)
+
         cv.waitKey(1)
 # prevFrame = newFrame
