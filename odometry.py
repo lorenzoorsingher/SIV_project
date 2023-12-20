@@ -10,16 +10,47 @@ class Position:
     def __init__(self):
         self.x = 0
         self.y = 0
-        self.cumul_R = np.array([0, 0, 0], dtype=np.float64)
+        self.z = 0
+        self.world_coo = np.array([0, 0, 0, 1])
+        self.world_pose = np.eye(4, 4)
+        self.cumul_R = np.eye(3, 3, dtype=np.float64)
+        self.cumul_eulerR = np.array([0, 0, 0], dtype=np.float64)
         self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
 
     def update_pos(self, R, t):
-        self.cumul_t += t
-        # breakpoint()
-        self.cumul_R += self.rotationMatrixToEulerAngles(R)
+        # self.cumul_t += t
 
-        self.y += np.cos(self.cumul_R[1]) * t[0]
-        self.x += np.sin(self.cumul_R[1]) * t[2]
+        # self.cumul_R = np.matmul(self.cumul_R, R)
+        # self.cumul_eulerR += self.rotationMatrixToEulerAngles(R)
+        # eulered = self.rotationMatrixToEulerAngles(self.cumul_R)
+
+        tmpT = np.eye(4, 4)
+        tmpT[:3, :3] = R
+        tmpT[:3, 3] = t
+        curr_coo = np.array([self.x, self.y, self.z, 1])
+        self.x, self.y, self.z, _ = np.dot(tmpT, curr_coo)
+
+        # print("----------------------------------")
+        # print(abs(abs(R) - np.eye(3, 3)).round(2).mean())
+        # print((self.cumul_eulerR * (180 / np.pi)).round(2))
+        # print(abs(R - np.eye(3, 3)).round(2).mean())
+        # self.y += np.cos(self.cumul_eulerR[1]) * t[0]
+        # self.x += np.sin(self.cumul_eulerR[1]) * t[2]
+
+        # Initial camera pose
+
+        # Apply transformations
+        self.cumul_R = np.dot(R, self.cumul_R)
+        self.cumul_t = t + np.dot(R, self.cumul_t)
+
+        # v = R^T * v' - R^T * t
+
+        self.world_pose[:3, :3] = self.cumul_R.T
+        self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
+
+        self.world_coo = np.dot(tmpT, np.array([0, 0, 0, 1]))
+        # print(self.world_coo.round(2))
+        # print(curr_coo.round(2))
 
     def rotationMatrixToEulerAngles(self, R):
         sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
@@ -36,6 +67,22 @@ class Position:
             z = 0
 
         return np.array([x, y, z])
+
+
+def skew_matrix(t):
+    """
+    Returns the skew-symmetric matrix associated with the translation vector t.
+    """
+    return np.array([[0, -t[2], t[1]], [t[2], 0, -t[0]], [-t[1], t[0], 0]])
+
+
+def essential_matrix(R, t):
+    """
+    Returns the essential matrix given the rotation matrix R and translation vector t.
+    """
+    skew_t = skew_matrix(t)
+    E = skew_t @ R
+    return E
 
 
 class Odometry:
@@ -61,20 +108,22 @@ class Odometry:
         uimg1 = cv.undistort(img1, self.mtx, self.dist)
         uimg2 = cv.undistort(img2, self.mtx, self.dist)
 
-        pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
+        pFrame1, pFrame2 = self.ORB_FLANN(uimg1, uimg2)
 
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
-            E, mask = cv.findEssentialMat(
-                pFrame1,
-                pFrame2,
-                self.mtx,
-                self.dist,
-                self.mtx,
-                self.dist,
-                cv.RANSAC,
-                0.999,
-                1.0,
-            )
+            # E, mask = cv.findEssentialMat(
+            #     pFrame1,
+            #     pFrame2,
+            #     self.mtx,
+            #     self.dist,
+            #     self.mtx,
+            #     self.dist,
+            #     cv.RANSAC,
+            #     0.999,
+            #     1.0,
+            # )
+
+            E, _ = cv2.findEssentialMat(pFrame1, pFrame2, self.mtx, threshold=1)
 
             R, t = decomp_essential_mat(
                 E,
@@ -83,19 +132,20 @@ class Odometry:
                 self.mtx,
                 self.proj,
             )
-            # breakpoint()
+
             if abs(t.mean()) < 10:
                 # breakpoint()
 
-                newT = np.eye(4, dtype=np.float64)
-                newT[:3, :3] = R
-                newT[:3, 3] = t
-                newP = np.matmul(
-                    np.concatenate((self.mtx, np.zeros((3, 1))), axis=1), newT
-                )
-                self.proj = newP
+                # newT = np.eye(4, dtype=np.float64)
+                # newT[:3, :3] = R
+                # newT[:3, 3] = t
+                # newP = np.matmul(
+                #     np.concatenate((self.mtx, np.zeros((3, 1))), axis=1), newT
+                # )
+                # self.proj = newP
+
                 # print(t)
-                # self.position.update_pos(R, t)
+                self.position.update_pos(R, t)
 
     def ORB_BF(self, img1, img2):
         orb = cv.ORB_create()
@@ -111,7 +161,7 @@ class Odometry:
 
         # Apply ratio test
         good = []
-        thr = 50
+        thr = 100
         for m in matches:
             if (
                 abs(kp1[m.queryIdx].pt[0] - kp2[m.trainIdx].pt[0]) < thr
