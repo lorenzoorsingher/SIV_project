@@ -110,8 +110,8 @@ def calibrate_camera(allCorners, allIds, imsize):
     )
 
 
-video_path = "data/room_calib.MOV"
-calib_path = "camera_data/calib.json"
+video_path = "data/buc_calib.mp4"
+calib_path = "camera_data/calib_buc.json"
 cap = cv.VideoCapture(video_path)
 
 cv.namedWindow("frame", cv.WINDOW_NORMAL)
@@ -132,9 +132,9 @@ while cap.isOpened():
                 frame, corners, ids, (0, 0, 255)
             )
 
-    if False:
+    if True:
         cv.imshow("frame", frame)
-        cv.waitKey(0)
+        cv.waitKey(1)
 
 # allCorners = np.array(allCorners,dtype=np.float32)
 
