@@ -47,8 +47,8 @@ class kittiLoader:
                 el = el.split(" ")
                 calibdict[el[0].replace(":", "")] = [float(num) for num in el[1:]]
 
-            self.mtx = np.array(calibdict["K_" + self.sequence_id]).reshape(3, 3)
-            self.dist = np.array(calibdict["D_" + self.sequence_id])
+            self.mtx = np.array(calibdict["K_00"]).reshape(3, 3)
+            self.dist = np.array(calibdict["D_00"])
 
     def get_seqlen(self):
         return len(self.im_paths)
