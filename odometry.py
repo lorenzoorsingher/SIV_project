@@ -14,18 +14,17 @@ class Position:
         self.world_coo = np.array([0, 0, 0, 1])
         self.world_pose = np.eye(4, 4)
         self.cumul_R = np.eye(3, 3, dtype=np.float64)
-        self.cumul_eulerR = np.array([0, 0, 0], dtype=np.float64)
         self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
         self.lastgoodpose = np.eye(4, 4)
 
-    def update_pos(self, R, t):
+    def update_pos(self, R, t, bad_data):
         tmpT = np.eye(4, 4)
         tmpT[:3, :3] = R
         tmpT[:3, 3] = t
 
-        curr_coo = np.array([self.x, self.y, self.z, 1])
-        self.x, self.y, self.z, _ = np.dot(tmpT, curr_coo)
-        self.world_coo = np.dot(tmpT, np.array([0, 0, 0, 1]))
+        # curr_coo = np.array([self.x, self.y, self.z, 1])
+        # self.x, self.y, self.z, _ = np.dot(tmpT, curr_coo)
+        # self.world_coo = np.dot(tmpT, np.array([0, 0, 0, 1]))
 
         eulered = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
 
@@ -33,7 +32,7 @@ class Position:
         for i in range(int(abs(eulered[1])) // 1):
             sizestr += "#"
 
-        if abs(eulered[1]) >= 10:
+        if abs(eulered[1]) >= 10 or bad_data:
             pose = self.lastgoodpose
             R = self.lastgoodpose[:3, :3]
             t = self.lastgoodpose[:3, 3]
@@ -99,20 +98,23 @@ class Odometry:
 
         pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
 
-        if len(pFrame1) >= 6 and len(pFrame2) >= 6:
-            # E, mask = cv.findEssentialMat(
-            #     pFrame1,
-            #     pFrame2,
-            #     self.mtx,
-            #     self.dist,
-            #     self.mtx,
-            #     self.dist,
-            #     cv.RANSAC,
-            #     0.999,
-            #     1.0,
-            # )
+        R, t, bad_data = self.epipolarComputation(pFrame1, pFrame2)
+        self.position.update_pos(R, t, bad_data)
 
-            E, _ = cv2.findEssentialMat(pFrame1, pFrame2, self.mtx, threshold=1)
+    # def homographyComputation(self, pFrame1, pFrame2):
+    #     M, mask = cv.findHomography(pFrame1, pFrame2, cv.RANSAC, 5.0)
+    #     return M
+
+    def epipolarComputation(self, pFrame1, pFrame2):
+        bad_data = False
+        if len(pFrame1) >= 6 and len(pFrame2) >= 6:
+            E, _ = cv2.findEssentialMat(
+                pFrame1,
+                pFrame2,
+                self.mtx,
+                threshold=1,
+                method=cv.RANSAC,
+            )
 
             R, t = decomp_essential_mat(
                 E,
@@ -122,19 +124,11 @@ class Odometry:
                 self.proj,
             )
 
-            if abs(t.mean()) < 10:
-                # breakpoint()
-
-                # newT = np.eye(4, dtype=np.float64)
-                # newT[:3, :3] = R
-                # newT[:3, 3] = t
-                # newP = np.matmul(
-                #     np.concatenate((self.mtx, np.zeros((3, 1))), axis=1), newT
-                # )
-                # self.proj = newP
-
-                # print(t)
-                self.position.update_pos(R, t)
+            if abs(t.mean()) > 10:
+                bad_data = True
+        else:
+            bad_data = True
+        return R, t, bad_data
 
     def ORB_BF(self, img1, img2):
         orb = cv.ORB_create()
@@ -172,6 +166,8 @@ class Odometry:
 
         pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
+
+        # breakpoint()
         return pFrame1, pFrame2
 
     def ORB_FLANN(self, img1, img2):
@@ -222,6 +218,41 @@ class Odometry:
             )
             cv.namedWindow("ORB", cv.WINDOW_NORMAL)
             cv.imshow("ORB", img3)
+        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
+        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
+        return pFrame1, pFrame2
+
+    def SIFT_FLANN(self, img1, img2):
+        # Initiate SIFT detector
+        sift = cv.SIFT_create()
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(img1, None)
+        kp2, des2 = sift.detectAndCompute(img2, None)
+        # FLANN parameters
+        FLANN_INDEX_KDTREE = 1
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)  # or pass empty dictionary
+        flann = cv.FlannBasedMatcher(index_params, search_params)
+        matches = flann.knnMatch(des1, des2, k=2)
+        # Need to draw only good matches, so create a mask
+        matchesMask = [[0, 0] for i in range(len(matches))]
+        good = []
+        # ratio test as per Lowe's paper
+        for i, (m, n) in enumerate(matches):
+            if m.distance < 0.7 * n.distance:
+                matchesMask[i] = [1, 0]
+                good.append([m])
+
+        draw_params = dict(
+            matchColor=(0, 255, 0),
+            singlePointColor=(255, 0, 0),
+            matchesMask=matchesMask,
+            flags=cv.DrawMatchesFlags_DEFAULT,
+        )
+        img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
+
+        cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
+        cv.imshow("SIFT", img3)
         pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2

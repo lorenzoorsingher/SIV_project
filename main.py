@@ -23,7 +23,7 @@ cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
-FRAMESKIP = 2
+FRAMESKIP = 1
 MODE = "kitti"
 if MODE == "imgs":
     calib_path = "camera_data/calib_tum.json"
