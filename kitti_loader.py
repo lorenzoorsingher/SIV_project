@@ -4,19 +4,20 @@ import numpy as np
 
 
 class kittiLoader:
-    def __init__(self, do_images, do_poses, sequence_id=0):
+    def __init__(self, do_images, do_poses, do_calib, sequence_n=0):
         self.do_images = do_images
         self.do_poses = do_poses
-        self.sequence_id = sequence_id
+        # self.do_calib = do_calib
+        self.sequence_id = sequence_n
         self.cur_idx = 0
 
-        if sequence_id < 10:
-            sequence_id = "0" + str(sequence_id)
+        if self.sequence_id < 10:
+            self.sequence_id = "0" + str(self.sequence_id)
         else:
-            sequence_id = str(sequence_id)
+            self.sequence_id = str(self.sequence_id)
 
-        self.im_paths = do_images + "/" + sequence_id + "/image_0"
-        pspath = do_poses + "/" + sequence_id + ".txt"
+        self.im_paths = do_images + "/" + self.sequence_id + "/image_0"
+        pspath = do_poses + "/" + self.sequence_id + ".txt"
 
         self.im_paths = [
             self.im_paths + "/" + name for name in os.listdir(self.im_paths)
@@ -33,7 +34,21 @@ class kittiLoader:
             for p in self.poses_tmp
         ]
 
-        # breakpoint()
+        self.do_calib = do_images + "/" + self.sequence_id + "/calib.txt"
+        calibstr = []
+
+        calib_file = "data/calib_cam_to_cam.txt"
+
+        with open(calib_file) as f:
+            calibstr = [el.replace("\n", "") for el in f.readlines()[2:]]
+            calib = calibstr[sequence_n : sequence_n + 7]
+            calibdict = {}
+            for el in calib:
+                el = el.split(" ")
+                calibdict[el[0].replace(":", "")] = [float(num) for num in el[1:]]
+
+            self.mtx = np.array(calibdict["K_" + self.sequence_id]).reshape(3, 3)
+            self.dist = np.array(calibdict["D_" + self.sequence_id])
 
     def get_seqlen(self):
         return len(self.im_paths)
@@ -45,6 +60,9 @@ class kittiLoader:
         img = cv.imread(self.im_paths[idx])
         pose = self.poses[idx]
         return img, pose
+
+    def get_params(self):
+        return self.mtx, self.dist
 
     def next_frame(self):
         img = cv.imread(self.im_paths[self.cur_idx])
