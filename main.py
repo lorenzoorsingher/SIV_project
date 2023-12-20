@@ -9,162 +9,139 @@ import os
 from odometry import Odometry
 from kitti_loader import kittiLoader
 
-calib_path = "camera_data/calib_tum.json"
+from scipy.spatial.transform import Rotation
+
+
 imgs_path = "data/sequence_14/images"
-video_path = "data/room_tour.MOV"
+
+calib_path = "camera_data/calib.json"
+maxdist = 300
+
+cv.namedWindow("track_map", cv.WINDOW_NORMAL)
+cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
+cv.namedWindow("updated_track_map2", cv.WINDOW_NORMAL)
+
+np.set_printoptions(formatter={"all": lambda x: str(x)})
+
+
+MODE = "kitti"
+if MODE == "imgs":
+    calib_path = "camera_data/calib_tum.json"
+    im_paths = [imgs_path + "/" + name for name in os.listdir(imgs_path)]
+    im_paths.sort()
+    idx = 0
+if MODE == "video":
+    calib_path = "camera_data/calib_buc.json"
+    video_path = "data/buc_pan2.mp4"
+    cap = cv.VideoCapture(video_path)
+if MODE == "kitti":
+    do_images = "data/data_odometry_gray/dataset/sequences"
+    do_poses = "data/data_odometry_poses/dataset/poses"
+    do_calib = "data/data_odometry_poses/dataset/sequences"
+
+    kl = kittiLoader(do_images, do_poses, do_calib, 0)
+    mtx, dist = kl.get_params()
+    maxdist = int(kl.get_maxdist())
 
 data = json.load(open(calib_path))
 mtx = np.array(data[0])
 dist = np.array(data[1])
 proj = np.hstack([mtx, np.array([[0], [0], [0]])])
 
+gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
+track_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
+track_map2 = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 
-cv.namedWindow("map", cv.WINDOW_NORMAL)
-cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
 
-np.set_printoptions(formatter={"all": lambda x: str(x)})
-
+updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
+updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
+updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 
 odo = Odometry(mtx, dist, 2)
 
-track_map = np.zeros((600, 600, 3))
 
-
-MODE = "kitti"
-if MODE == "imgs":
-    im_paths = [imgs_path + "/" + name for name in os.listdir(imgs_path)]
-    im_paths.sort()
-    idx = 0
-if MODE == "video":
-    cap = cv.VideoCapture(video_path)
-if MODE == "kitti":
-    do_images = "data/data_odometry_gray/dataset/sequences"
-    do_poses = "data/data_odometry_poses/dataset/poses"
-
-    kl = kittiLoader(do_images, do_poses, 0)
-    maxdist = int(kl.get_maxdist())
-
-
-gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
-
-
-def update_gtmap(pose, gt_map):
-    x, y, z = pose.T[-1]
+def update_map(pose, map):
+    x, _, z = pose.T[-1]
     R = pose.T[:3].T
-    rot = odo.position.rotationMatrixToEulerAngles(R) * (180 / np.pi)
 
-    #    breakpoint()
-    gt_map = cv.circle(
-        gt_map,
+    map = cv.circle(
+        map,
         (int(x) + maxdist, int(z) + maxdist),
         1,
         (255, 255, 0),
         2,
     )
 
-    # y_r = -np.cos(odo.position.cumul_R[1]) * 100
-    # x_r = -np.sin(odo.position.cumul_R[1]) * 100
+    updated_map = copy(map)
 
-    # # print(np.sin(odo.position.cumul_R[1]))
+    forw = np.array([0, 0, 100, 1])
 
-    # # track_map = cv.circle(track_map, (int(x_r)+300, int(y_r)+300), 1,(255,255,0),2)
-    # # track_map = np.zeros((600,600))
-    # track_map = cv.circle(
-    #     track_map,
-    #     (int(odo.position.x) + 300, int(odo.position.y) + 300),
-    #     1,
-    #     (255, 255, 0),
-    #     2,
-    # )
-    # track_map_tmp = copy(track_map)
-    # track_map_tmp = cv.line(
-    #     track_map_tmp,
-    #     (
-    #         int(x_r) + int(odo.position.x) + 300,
-    #         int(y_r) + int(odo.position.y) + 300,
-    #     ),
-    #     (int(odo.position.x) + 300, int(odo.position.y) + 300),
-    #     (0, 0, 255),
-    #     2,
-    # )
+    newt = np.eye(4, 4)
+    newt[:3, :3] = R
+    newt[2, 3] = 1
+    nx, y, nz, _ = newt @ forw
 
-    # track_map_tmp = cv.line(
-    #     track_map_tmp,
-    #     (
-    #         int(x_r) + 300,
-    #         int(y_r) + 500,
-    #     ),
-    #     (300, 500),
-    #     (0, 255, 0),
-    #     2,
-    # )
-    print("---")
-    print(x, "\t", y, "\t", z)
-    print(rot)
+    updated_map = cv.line(
+        updated_map,
+        (
+            int(nx) + int(x) + maxdist,
+            int(nz) + int(z) + maxdist,
+        ),
+        (int(x) + maxdist, int(z) + maxdist),
+        (255, 0, 255),
+        2,
+    )
+
+    return updated_map
 
 
-def update_map(pose, track_map):
-    pass
+def update_map2(x, z, map):
+    map = cv.circle(
+        map,
+        (int(x) + maxdist, int(z) + maxdist),
+        1,
+        (255, 255, 0),
+        2,
+    )
+
+    return map
 
 
+par = 0
 while True:
     if MODE == "video":
-        ret, frame = cap.read()
+        for i in range(4):
+            ret, frame = cap.read()
     if MODE == "imgs":
         frame = cv.imread(im_paths[idx])
         idx += 1
         ret = True
     if MODE == "kitti":
-        frame, pose = kl.next_frame()
-        update_gtmap(pose, gt_map)
+        for i in range(2):
+            frame, pose = kl.next_frame()
+        updated_gt_map = update_map(pose, gt_map)
         ret = True
 
     if not ret:
         break
+
     odo.next_frame(frame)
 
-    y_r = -np.cos(odo.position.cumul_R[1]) * 100
-    x_r = -np.sin(odo.position.cumul_R[1]) * 100
+    # updated_track_map2 = update_map2(
+    #     odo.position.world_coo[0], odo.position.world_coo[2], track_map2
+    # )
 
-    # print(np.sin(odo.position.cumul_R[1]))
+    updated_track_map2 = update_map(odo.position.world_pose[:-1], track_map2)
 
-    # track_map = cv.circle(track_map, (int(x_r)+300, int(y_r)+300), 1,(255,255,0),2)
-    # track_map = np.zeros((600,600))
-    track_map = cv.circle(
-        track_map,
-        (int(odo.position.x) + 300, int(odo.position.y) + 300),
-        1,
-        (255, 255, 0),
-        2,
-    )
-    track_map_tmp = copy(track_map)
-    track_map_tmp = cv.line(
-        track_map_tmp,
-        (
-            int(x_r) + int(odo.position.x) + 300,
-            int(y_r) + int(odo.position.y) + 300,
-        ),
-        (int(odo.position.x) + 300, int(odo.position.y) + 300),
-        (0, 0, 255),
-        2,
-    )
+    # tmpPose = np.zeros((3, 4))
+    # tmpPose[:3, :3] = odo.position.cumul_R
+    # tmpPose[:3, 3] = odo.position.cumul_t
+    # updated_track_map = update_map(tmpPose, track_map)
 
-    track_map_tmp = cv.line(
-        track_map_tmp,
-        (
-            int(x_r) + 300,
-            int(y_r) + 500,
-        ),
-        (300, 500),
-        (0, 255, 0),
-        2,
-    )
-    # print(cumul_R)
-    # breakpoint()
     if True:
         # cv.imshow("frame", np.hstack([uimg1,uimg2]))
-        cv.imshow("map", track_map_tmp)
-        cv.imshow("gt_map", gt_map)
-
+        cv.imshow("gt_map", updated_gt_map)
+        # cv.imshow("track_map", updated_track_map)
+        cv.imshow("updated_track_map2", updated_track_map2)
         cv.waitKey(1)
 # prevFrame = newFrame
