@@ -74,22 +74,6 @@ class Position:
         return np.array([x, y, z])
 
 
-def skew_matrix(t):
-    """
-    Returns the skew-symmetric matrix associated with the translation vector t.
-    """
-    return np.array([[0, -t[2], t[1]], [t[2], 0, -t[0]], [-t[1], t[0], 0]])
-
-
-def essential_matrix(R, t):
-    """
-    Returns the essential matrix given the rotation matrix R and translation vector t.
-    """
-    skew_t = skew_matrix(t)
-    E = skew_t @ R
-    return E
-
-
 class Odometry:
     def __init__(self, mtx, dist, buf_size=4):
         self.frame_buffer = []
@@ -113,7 +97,7 @@ class Odometry:
         uimg1 = cv.undistort(img1, self.mtx, self.dist)
         uimg2 = cv.undistort(img2, self.mtx, self.dist)
 
-        pFrame1, pFrame2 = self.ORB_FLANN(uimg1, uimg2)
+        pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
 
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
             # E, mask = cv.findEssentialMat(
@@ -166,7 +150,7 @@ class Odometry:
 
         # Apply ratio test
         good = []
-        thr = 100
+        thr = 300
         for m in matches:
             if (
                 abs(kp1[m.queryIdx].pt[0] - kp2[m.trainIdx].pt[0]) < thr
