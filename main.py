@@ -39,7 +39,7 @@ if MODE == "kitti":
     do_poses = "data/data_odometry_poses/dataset/poses"
     do_calib = "data/data_odometry_poses/dataset/sequences"
 
-    kl = kittiLoader(do_images, do_poses, do_calib, 0)
+    kl = kittiLoader(do_images, do_poses, do_calib, 4)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
 
@@ -92,7 +92,18 @@ def update_map(pose, map):
         (255, 0, 255),
         2,
     )
-
+    # breakpoint()
+    eulered = odo.position.rotationMatrixToEulerAngles(R) * 180 / np.pi
+    cv2.putText(
+        updated_map,
+        str(eulered[1].round(2)),
+        (10, updated_map.shape[0] // 10),
+        cv.FONT_HERSHEY_PLAIN,
+        updated_map.shape[0] // 100,
+        (255, 255, 255),
+        10,
+        cv2.LINE_AA,
+    )
     return updated_map
 
 
@@ -140,7 +151,6 @@ while True:
     # updated_track_map = update_map(tmpPose, track_map)
 
     if True:
-        # cv.imshow("frame", np.hstack([uimg1,uimg2]))
         cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map2]))
         # cv.imshow("track_map", updated_track_map)
         # cv.imshow("updated_track_map2", updated_track_map2)
