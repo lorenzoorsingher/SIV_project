@@ -41,7 +41,8 @@ class kittiLoader:
 
         with open(calib_file) as f:
             calibstr = [el.replace("\n", "") for el in f.readlines()[2:]]
-            calib = calibstr[sequence_n : sequence_n + 7]
+            calib = calibstr[:7]
+            # breakpoint()
             calibdict = {}
             for el in calib:
                 el = el.split(" ")
