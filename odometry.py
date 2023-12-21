@@ -33,7 +33,6 @@ class Position:
             sizestr += "#"
 
         if abs(eulered[1]) >= 10 or bad_data:
-            pose = self.lastgoodpose
             R = self.lastgoodpose[:3, :3]
             t = self.lastgoodpose[:3, 3]
             sizestr2 = ""
@@ -45,7 +44,7 @@ class Position:
             self.lastgoodpose[:3, :3] = R
             self.lastgoodpose[:3, 3] = t
 
-        print(sizestr)
+        print(eulered.round(2), "\t", sizestr)
 
         # Apply transformations
         self.cumul_R = np.dot(R, self.cumul_R)
