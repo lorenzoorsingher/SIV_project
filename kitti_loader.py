@@ -39,17 +39,24 @@ class kittiLoader:
 
         calib_file = "data/calib_cam_to_cam.txt"
 
-        with open(calib_file) as f:
-            calibstr = [el.replace("\n", "") for el in f.readlines()[2:]]
-            calib = calibstr[:7]
-            # breakpoint()
-            calibdict = {}
-            for el in calib:
-                el = el.split(" ")
-                calibdict[el[0].replace(":", "")] = [float(num) for num in el[1:]]
+        # with open(calib_file) as f:
+        #     calibstr = [el.replace("\n", "") for el in f.readlines()[2:]]
+        #     calib = calibstr[:7]
+        #     # breakpoint()
+        #     calibdict = {}
+        #     for el in calib:
+        #         el = el.split(" ")
+        #         calibdict[el[0].replace(":", "")] = [float(num) for num in el[1:]]
 
-            self.mtx = np.array(calibdict["K_00"]).reshape(3, 3)
-            self.dist = np.array(calibdict["D_00"])
+        #     self.mtx = np.array(calibdict["K_00"]).reshape(3, 3)
+        #     self.dist = np.zeros([1, 5])
+        with open(self.do_calib) as f:
+            calibstr = f.readlines()
+            calib = [float(num) for num in calibstr[0][4:-1].split(" ")]
+            calib = np.array(calib).reshape(3, 4).T[:-1].T
+            self.mtx = calib
+            self.dist = None
+            # breakpoint()
 
     def get_seqlen(self):
         return len(self.im_paths)
