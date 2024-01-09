@@ -92,14 +92,20 @@ class Odometry:
         img1 = cv.cvtColor(firstFrame, cv.COLOR_BGR2GRAY)
         img2 = cv.cvtColor(lastFrame, cv.COLOR_BGR2GRAY)
 
-        uimg1 = cv.undistort(img1, self.mtx, self.dist)
-        uimg2 = cv.undistort(img2, self.mtx, self.dist)
+        if not self.dist is None:
+            uimg1 = cv.undistort(img1, self.mtx, self.dist)
+            uimg2 = cv.undistort(img2, self.mtx, self.dist)
+        else:
+            uimg1 = img1
+            uimg2 = img2
 
         pFrame1, pFrame2 = self.SIFT_KNN(uimg1, uimg2)
 
         R, t, bad_data = self.epipolarComputation(pFrame1, pFrame2)
 
         self.position.update_pos(R, t, bad_data)
+
+        cv.imshow("frames", np.vstack([img2, uimg1]))
 
     # def homographyComputation(self, pFrame1, pFrame2):
     #     M, mask = cv.findHomography(pFrame1, pFrame2, cv.RANSAC, 5.0)
