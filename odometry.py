@@ -73,13 +73,13 @@ class Position:
 
 
 class Odometry:
-    def __init__(self, mtx, dist, buf_size=4):
+    def __init__(self, mtx, dist, buf_size=2):
         self.frame_buffer = []
         self.position = Position()
         self.mtx = mtx
         self.dist = dist
         self.proj = np.hstack([mtx, np.array([[0], [0], [0]])])
-
+        # breakpoint()
         self.buf_size = buf_size
 
     def next_frame(self, lastFrame):
@@ -95,9 +95,10 @@ class Odometry:
         uimg1 = cv.undistort(img1, self.mtx, self.dist)
         uimg2 = cv.undistort(img2, self.mtx, self.dist)
 
-        pFrame1, pFrame2 = self.ORB_BF(uimg1, uimg2)
+        pFrame1, pFrame2 = self.SIFT_KNN(uimg1, uimg2)
 
         R, t, bad_data = self.epipolarComputation(pFrame1, pFrame2)
+
         self.position.update_pos(R, t, bad_data)
 
     # def homographyComputation(self, pFrame1, pFrame2):
@@ -127,7 +128,44 @@ class Odometry:
                 bad_data = True
         else:
             bad_data = True
+
         return R, t, bad_data
+
+    def SIFT_KNN(self, img1, img2):
+        # Initiate SIFT detector
+        sift = cv.SIFT_create()
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(img1, None)
+        kp2, des2 = sift.detectAndCompute(img2, None)
+        # BFMatcher with default params
+        bf = cv.BFMatcher()
+        matches = bf.knnMatch(des1, des2, k=2)
+        # Sort them in the order of their distance.
+        # matches = sorted(matches, key=lambda x: x.distance)
+
+        good = []
+
+        for m, n in matches:
+            if m.distance < 0.6 * n.distance:
+                good.append([m])
+        if True:
+            img3 = cv.drawMatchesKnn(
+                img1,
+                kp1,
+                img2,
+                kp2,
+                good,
+                None,
+                flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+            )
+            cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
+            cv.imshow("SIFT", img3)
+        # cv.waitKey(0)
+        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
+        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
+
+        # breakpoint()
+        return pFrame1, pFrame2
 
     def ORB_BF(self, img1, img2):
         orb = cv.ORB_create()
