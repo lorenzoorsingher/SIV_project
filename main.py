@@ -19,7 +19,7 @@ maxdist = 300
 
 # cv.namedWindow("track_map", cv.WINDOW_NORMAL)
 cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
-# cv.namedWindow("updated_track_map2", cv.WINDOW_NORMAL)
+cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
@@ -58,7 +58,7 @@ gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 track_map2 = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 
-odo = Odometry(mtx, dist, 2)
+odo = Odometry(mtx, dist, 1)
 
 
 def update_map(pose, map):
