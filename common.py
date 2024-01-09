@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import cv2
 
@@ -60,7 +61,8 @@ def decomp_essential_mat(E, q1, q2, mtx, initP):
             np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
             / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
         )
-        # breakpoint()
+        if math.isnan(relative_scale):
+            relative_scale = 1
         return sum_of_pos_z_Q1 + sum_of_pos_z_Q2, relative_scale
 
     # Decompose the essential matrix
