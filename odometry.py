@@ -73,12 +73,13 @@ class Position:
 
 
 class Odometry:
-    def __init__(self, mtx, dist, buf_size=2):
+    def __init__(self, mtx, dist, buf_size=2, matcher_method=SIFT_KNN):
         self.frame_buffer = []
         self.position = Position()
         self.mtx = mtx
         self.dist = dist
         self.proj = np.hstack([mtx, np.array([[0], [0], [0]])])
+        self.matcher_method = matcher_method
         # breakpoint()
         self.buf_size = buf_size
 
@@ -99,7 +100,16 @@ class Odometry:
             uimg1 = img1
             uimg2 = img2
 
-        pFrame1, pFrame2 = self.SIFT_KNN(uimg1, uimg2)
+        if self.matcher_method == SIFT_KNN:
+            matcher = self.SIFT_KNN
+        elif self.matcher_method == SIFT_FLANN:
+            matcher = self.SIFT_FLANN
+        elif self.matcher_method == ORB_BF:
+            matcher = self.ORB_BF
+        elif self.matcher_method == ORB_FLANN:
+            matcher = self.ORB_FLANN
+
+        pFrame1, pFrame2 = matcher(uimg1, uimg2)
 
         R, t, bad_data = self.epipolarComputation(pFrame1, pFrame2)
 

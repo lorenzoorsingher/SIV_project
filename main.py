@@ -47,7 +47,8 @@ if MODE == "kitti":
     do_poses = "data/data_odometry_poses/dataset/poses"
     do_calib = "data/data_odometry_poses/dataset/sequences"
 
-    kl = kittiLoader(do_images, do_poses, do_calib, 0)
+    SEQUENCE = 0
+    kl = kittiLoader(do_images, do_poses, do_calib, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
 
@@ -58,7 +59,7 @@ gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 track_map2 = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 
-odo = Odometry(mtx, dist, 1)
+odo = Odometry(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
 
 
 def update_map(pose, map):

@@ -2,6 +2,11 @@ import math
 import numpy as np
 import cv2
 
+ORB_BF = 0
+ORB_FLANN = 1
+SIFT_FLANN = 2
+SIFT_KNN = 3
+
 
 def _form_transf(R, t):
     """
@@ -85,6 +90,6 @@ def decomp_essential_mat(E, q1, q2, mtx, initP):
     right_pair = pairs[right_pair_idx]
     relative_scale = relative_scales[right_pair_idx]
     R1, t = right_pair
-    t = t * relative_scale
+    t = t * 1
 
     return [R1, t]
