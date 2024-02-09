@@ -15,7 +15,6 @@ imgs_path = "data/sequence_14/images"
 calib_path = "camera_data/calib.json"
 maxdist = 300
 
-# cv.namedWindow("track_map", cv.WINDOW_NORMAL)
 cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
 cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
@@ -121,14 +120,14 @@ def draw_gt_map(map):
     return map
 
 
-odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
+odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
 
 maxdist = int(maxdist * 1.5)
 mapsize = maxdist * 2 + 10
 gt_map = np.zeros((mapsize, mapsize, 3))
-track_map2 = np.zeros((mapsize, mapsize, 3))
-track_map2 = draw_gt_map(track_map2)
+track_map = np.zeros((mapsize, mapsize, 3))
+# track_map = draw_gt_map(track_map)
 updated_gt_map = np.zeros((mapsize, mapsize, 3))
 
 for tqdm_idx in tqdm(range(STEPS)):
@@ -155,7 +154,6 @@ for tqdm_idx in tqdm(range(STEPS)):
     # TODO: add performance evaluation
 
     if DEBUG:
-        updated_track_map2 = update_map(odo.position.world_pose[:-1], track_map2)
-        cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map2]))
+        updated_track_map = update_map(odo.position.world_pose[:-1], track_map)
+        cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.waitKey(1)
-# prevFrame = newFrame
