@@ -27,14 +27,14 @@ class VOAgent:
         # breakpoint()
         self.buf_size = buf_size
 
-    def next_frame(self, lastFrame: np.ndarray) -> None:
+    def next_frame(self, lastFrame) -> None:
         """
         This function processes the last frame and updates the agent position
         running visual odometry between two consecutive frames.
 
         Parameters
         ----------
-        - lastFrame: frame to be processed
+        lastFrame: frame to be processed
         """
 
         # fill frames buffer

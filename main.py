@@ -51,10 +51,10 @@ if MODE == "kitti":
 
 
 maxdist = int(maxdist * 1.5)
-
-gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
-track_map2 = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
-updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
+mapsize = maxdist * 2 + 10
+gt_map = np.zeros((mapsize, mapsize, 3))
+track_map2 = np.zeros((mapsize, mapsize, 3))
+updated_gt_map = np.zeros((mapsize, mapsize, 3))
 
 odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
 
