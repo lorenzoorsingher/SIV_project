@@ -7,27 +7,36 @@ from copy import copy
 
 
 class Position:
+    """
+    This class is used to keep track of the agent position,
+    it contains the functionalities to update the location based
+    on the rotation and translation between two consecutive frames.
+    """
+
     def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.z = 0
-        self.world_coo = np.array([0, 0, 0, 1])
+
         self.world_pose = np.eye(4, 4)
         self.cumul_R = np.eye(3, 3, dtype=np.float64)
         self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
         self.lastgoodpose = np.eye(4, 4)
 
     def update_pos(self, R, t, bad_data):
-        tmpT = np.eye(4, 4)
-        tmpT[:3, :3] = R
-        tmpT[:3, 3] = t
+        """
+        Update the agent position based on the rotation and translation
 
-        # curr_coo = np.array([self.x, self.y, self.z, 1])
-        # self.x, self.y, self.z, _ = np.dot(tmpT, curr_coo)
-        # self.world_coo = np.dot(tmpT, np.array([0, 0, 0, 1]))
+        Parameters
+        ----------
+        R (ndarray): Rotation matrix
+        t (ndarray): Translation vector
+        bad_data (bool): flag to indicate if the data is bad
+        """
 
+        # Check if the data is bad. If data is bad
+        # then use the last good pose, otherwise update
+        # the last good pose with the current pose
         eulered = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
 
+        # TODO: there must be a better wahy to do this
         if abs(eulered[1]) >= 10:
             bad_data = True
 
@@ -53,11 +62,22 @@ class Position:
         self.cumul_t = t + np.dot(R, self.cumul_t)
 
         # v = R^T * v' - R^T * t
-
+        # invert the coordinates system from camera to world
         self.world_pose[:3, :3] = self.cumul_R.T
         self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
 
     def rotationMatrixToEulerAngles(self, R):
+        """
+        Convert a rotation matrix to Euler angles.
+
+        Parameters
+        ----------
+        R (ndarray): Rotation matrix
+
+        Returns
+        -------
+        ndarray: Euler angles
+        """
         sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
 
         singular = sy < 1e-6
@@ -74,8 +94,18 @@ class Position:
         return np.array([x, y, z])
 
 
-class Odometry:
+class VOAgent:
     def __init__(self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN):
+        """
+        Initialize the Odometry object
+
+        Parameters
+        ----------
+        mtx (ndarray): Camera matrix
+        dist (ndarray): Distortion coefficients
+        buf_size (int): Frames buffer size
+        matcher_method (int): Feature matching method
+        """
         self.frame_buffer = []
         self.position = Position()
         self.mtx = mtx
@@ -217,7 +247,7 @@ class Odometry:
         relative_scale = relative_scales[right_pair_idx]
         R1, t = right_pair
         t = t * relative_scale
-
+        print("Relative scale: ", relative_scale)
         return [R1, t]
 
     def sum_z_cal_relative_scale(self, R, t, mtx, q1, q2, initP):
@@ -245,6 +275,7 @@ class Odometry:
         T = np.eye(4, dtype=np.float64)
         T[:3, :3] = R
         T[:3, 3] = t
+
         # Make the projection matrix
         P = np.matmul(np.concatenate((mtx, np.zeros((3, 1))), axis=1), T)
 
@@ -267,7 +298,7 @@ class Odometry:
             np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
             / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
         )
-        print("Relative scale: ", relative_scale)
+
         if math.isnan(relative_scale):
             relative_scale = 1
 

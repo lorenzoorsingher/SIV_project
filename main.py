@@ -6,7 +6,7 @@ import math
 from common import *
 from copy import copy
 import os
-from odometry import Odometry
+from odometry import VOAgent
 from kitti_loader import kittiLoader
 
 from scipy.spatial.transform import Rotation
@@ -58,7 +58,7 @@ gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 track_map2 = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 updated_gt_map = np.zeros((maxdist * 2 + 10, maxdist * 2 + 10, 3))
 
-odo = Odometry(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
+odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
 
 
 def update_map(pose, map):
