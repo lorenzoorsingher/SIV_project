@@ -43,10 +43,10 @@ class Position:
             self.lastgoodpose[:3, :3] = R
             self.lastgoodpose[:3, 3] = t
 
-        sizestr = "#"
-        for i in range(int(abs(eulered[1])) // 1):
-            sizestr += "#"
-        print(eulered.round(2), "\t", sizestr)
+        # sizestr = "#"
+        # for i in range(int(abs(eulered[1])) // 1):
+        #     sizestr += "#"
+        # print(eulered.round(2), "\t", sizestr)
 
         # Apply transformations
         self.cumul_R = np.dot(R, self.cumul_R)
@@ -161,7 +161,10 @@ class Odometry:
                 method=cv.RANSAC,
             )
 
-            R, t = self.decomp_essential_mat(
+            # TODO: pick best solution
+            _, R, t, mask = cv2.recoverPose(E, pFrame1, pFrame2)
+            t = t[:, 0]
+            R2, t2 = self.decomp_essential_mat(
                 E,
                 np.array(pFrame1, dtype=np.float32),
                 np.array(pFrame2, dtype=np.float32),
@@ -213,7 +216,7 @@ class Odometry:
         right_pair = pairs[right_pair_idx]
         relative_scale = relative_scales[right_pair_idx]
         R1, t = right_pair
-        t = t * 1
+        t = t * relative_scale
 
         return [R1, t]
 
@@ -260,10 +263,11 @@ class Odometry:
 
         # TODO verify correctness of relative scale
         # Form point pairs and calculate the relative scale
-        relative_scale = np.mean(
+        relative_scale = np.nanmean(
             np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
             / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
         )
+        print("Relative scale: ", relative_scale)
         if math.isnan(relative_scale):
             relative_scale = 1
 
