@@ -1,9 +1,11 @@
+import os
+import json
+from copy import copy
+
 import cv2 as cv
 import numpy as np
-import json
+
 from common import *
-from copy import copy
-import os
 from odometry import VOAgent
 from kitti_loader import kittiLoader
 

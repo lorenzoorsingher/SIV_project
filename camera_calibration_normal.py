@@ -5,11 +5,6 @@ import pdb
 import os
 
 
-chessboard_size = [7, 5]
-objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
-objp[:, :2] = np.mgrid[0 : chessboard_size[0], 0 : chessboard_size[1]].T.reshape(-1, 2)
-
-
 def get_corners(image):
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     ret, corners = cv.findChessboardCorners(
@@ -37,6 +32,11 @@ def get_corners(image):
     # print("[corner detection] finished.")
 
     return ret, corners2
+
+
+chessboard_size = [7, 5]
+objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
+objp[:, :2] = np.mgrid[0 : chessboard_size[0], 0 : chessboard_size[1]].T.reshape(-1, 2)
 
 
 imgs_path = "data/calib_wide_checkerboard1/images"

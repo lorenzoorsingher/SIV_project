@@ -1,16 +1,8 @@
 import cv2 as cv
 import numpy as np
 import json
+import argparse
 import pdb
-
-chessboard_size = [7, 5, 30, 22]
-aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
-board = cv.aruco.CharucoBoard(
-    (chessboard_size[0], chessboard_size[1]),
-    chessboard_size[2],
-    chessboard_size[3],
-    aruco_dict,
-)
 
 
 def get_corners_charuco(image):
@@ -110,8 +102,30 @@ def calibrate_camera(allCorners, allIds, imsize):
     )
 
 
-video_path = "data/buc_calib.mp4"
-calib_path = "camera_data/calib_buc.json"
+chessboard_size = [7, 5, 30, 22]
+aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
+board = cv.aruco.CharucoBoard(
+    (chessboard_size[0], chessboard_size[1]),
+    chessboard_size[2],
+    chessboard_size[3],
+    aruco_dict,
+)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--video", help="path to the video clip")
+parser.add_argument("-O", "--output", help="path to the save folder for the json file")
+args = parser.parse_args()
+
+if args.video is None:
+    print("please provide a video path, type -h for help")
+    exit()
+if args.output is None:
+    print("please provide an output path, type -h for help")
+    exit()
+
+
+video_path = args.video
+calib_path = args.output
 cap = cv.VideoCapture(video_path)
 
 cv.namedWindow("frame", cv.WINDOW_NORMAL)
