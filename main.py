@@ -4,7 +4,7 @@ from copy import copy
 
 import cv2 as cv
 import numpy as np
-
+from tqdm import tqdm
 from common import *
 from odometry import VOAgent
 from kitti_loader import kittiLoader
@@ -21,6 +21,8 @@ cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
+DEBUG = True
+STEPS = 100
 FRAMESKIP = 1
 MODE = "kitti"
 if MODE == "imgs":
@@ -48,15 +50,7 @@ if MODE == "kitti":
     kl = kittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
-
-
-maxdist = int(maxdist * 1.5)
-mapsize = maxdist * 2 + 10
-gt_map = np.zeros((mapsize, mapsize, 3))
-track_map2 = np.zeros((mapsize, mapsize, 3))
-updated_gt_map = np.zeros((mapsize, mapsize, 3))
-
-odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
+    STEPS = kl.get_seqlen()
 
 
 def update_map(pose, map):
@@ -111,7 +105,33 @@ def update_map(pose, map):
     return updated_map
 
 
-while True:
+def draw_gt_map(map):
+    for i in range(0, len(kl.poses)):
+        pose = kl.poses[i]
+        x, _, z = pose.T[-1]
+
+        # update trace of map
+        map = cv.circle(
+            map,
+            (int(x) + maxdist, int(z) + maxdist),
+            1,
+            (0, 50, 50),
+            1,
+        )
+    return map
+
+
+odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
+
+
+maxdist = int(maxdist * 1.5)
+mapsize = maxdist * 2 + 10
+gt_map = np.zeros((mapsize, mapsize, 3))
+track_map2 = np.zeros((mapsize, mapsize, 3))
+track_map2 = draw_gt_map(track_map2)
+updated_gt_map = np.zeros((mapsize, mapsize, 3))
+
+for tqdm_idx in tqdm(range(STEPS)):
     if MODE == "video":
         for i in range(FRAMESKIP):
             ret, frame = cap.read()
@@ -131,10 +151,11 @@ while True:
 
     odo.next_frame(frame)
 
-    updated_track_map2 = update_map(odo.position.world_pose[:-1], track_map2)
+    # TODO: add error evaluation
+    # TODO: add performance evaluation
 
-    if True:
+    if DEBUG:
+        updated_track_map2 = update_map(odo.position.world_pose[:-1], track_map2)
         cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map2]))
-
         cv.waitKey(1)
 # prevFrame = newFrame

@@ -104,9 +104,9 @@ class VOAgent:
             )
 
             # TODO: pick best solution
-            _, R, t, mask = cv.recoverPose(E, pFrame1, pFrame2)
-            t = t[:, 0]
-            R2, t2 = self.decomp_essential_mat(
+            # _, R, t, mask = cv.recoverPose(E, pFrame1, pFrame2)
+            # t = t[:, 0]
+            R, t = self.decomp_essential_mat(
                 E,
                 np.array(pFrame1, dtype=np.float32),
                 np.array(pFrame2, dtype=np.float32),
@@ -159,7 +159,6 @@ class VOAgent:
         relative_scale = relative_scales[right_pair_idx]
         R1, t = right_pair
         t = t * relative_scale
-        print("Relative scale: ", relative_scale)
         return [R1, t]
 
     def sum_z_cal_relative_scale(self, R, t, mtx, q1, q2, initP) -> tuple:
@@ -215,6 +214,8 @@ class VOAgent:
             relative_scale = 1
 
         return sum_of_pos_z_Q1 + sum_of_pos_z_Q2, relative_scale
+
+    # TODO: refine code for feature matching
 
     def SIFT_KNN(self, img1, img2):
         # Initiate SIFT detector
