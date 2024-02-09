@@ -6,94 +6,6 @@ from common import *
 from copy import copy
 
 
-class Position:
-    """
-    This class is used to keep track of the agent position,
-    it contains the functionalities to update the location based
-    on the rotation and translation between two consecutive frames.
-    """
-
-    def __init__(self):
-
-        self.world_pose = np.eye(4, 4)
-        self.cumul_R = np.eye(3, 3, dtype=np.float64)
-        self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
-        self.lastgoodpose = np.eye(4, 4)
-
-    def update_pos(self, R, t, bad_data):
-        """
-        Update the agent position based on the rotation and translation
-
-        Parameters
-        ----------
-        R (ndarray): Rotation matrix
-        t (ndarray): Translation vector
-        bad_data (bool): flag to indicate if the data is bad
-        """
-
-        # Check if the data is bad. If data is bad
-        # then use the last good pose, otherwise update
-        # the last good pose with the current pose
-        eulered = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
-
-        # TODO: there must be a better wahy to do this
-        if abs(eulered[1]) >= 10:
-            bad_data = True
-
-        if bad_data:
-            R = self.lastgoodpose[:3, :3]
-            t = self.lastgoodpose[:3, 3]
-            sizestr2 = ""
-            for i in range(len(sizestr)):
-                sizestr2 += "X"
-            sizestr = sizestr2
-        else:
-            self.lastgoodpose = np.eye(4, 4)
-            self.lastgoodpose[:3, :3] = R
-            self.lastgoodpose[:3, 3] = t
-
-        # sizestr = "#"
-        # for i in range(int(abs(eulered[1])) // 1):
-        #     sizestr += "#"
-        # print(eulered.round(2), "\t", sizestr)
-
-        # Apply transformations
-        self.cumul_R = np.dot(R, self.cumul_R)
-        self.cumul_t = t + np.dot(R, self.cumul_t)
-
-        # v = R^T * v' - R^T * t
-        # invert the coordinates system from camera to world
-        self.world_pose[:3, :3] = self.cumul_R.T
-        self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
-
-    def rotationMatrixToEulerAngles(self, R):
-        """
-        Convert a rotation matrix to Euler angles.
-
-        Parameters
-        ----------
-        R (ndarray): Rotation matrix
-
-        Returns
-        -------
-        ndarray: Euler angles
-        """
-        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
-
-        singular = sy < 1e-6
-
-        if not singular:
-            x = math.atan2(R[2, 1], R[2, 2])
-            y = math.atan2(-R[2, 0], sy)
-            z = math.atan2(R[1, 0], R[0, 0])
-        else:
-            x = math.atan2(-R[1, 2], R[1, 1])
-            y = math.atan2(-R[2, 0], sy)
-            z = 0
-
-        return np.array([x, y, z])
-
-
 class VOAgent:
     def __init__(self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN):
         """
@@ -115,7 +27,7 @@ class VOAgent:
         # breakpoint()
         self.buf_size = buf_size
 
-    def next_frame(self, lastFrame):
+    def next_frame(self, lastFrame: np.ndarray) -> None:
         """
         This function processes the last frame and updates the agent position
         running visual odometry between two consecutive frames.
@@ -165,7 +77,7 @@ class VOAgent:
 
         cv.imshow("frames", np.vstack([img2, uimg1]))
 
-    def epipolar_computation(self, pFrame1, pFrame2):
+    def epipolar_computation(self, pFrame1, pFrame2) -> tuple:
         """
         Computes the essential matrix and extracts rotation and translation
         from the points matched between two consecutive frames.
@@ -183,7 +95,7 @@ class VOAgent:
         """
         bad_data = False
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
-            E, _ = cv2.findEssentialMat(
+            E, _ = cv.findEssentialMat(
                 pFrame1,
                 pFrame2,
                 self.mtx,
@@ -192,7 +104,7 @@ class VOAgent:
             )
 
             # TODO: pick best solution
-            _, R, t, mask = cv2.recoverPose(E, pFrame1, pFrame2)
+            _, R, t, mask = cv.recoverPose(E, pFrame1, pFrame2)
             t = t[:, 0]
             R2, t2 = self.decomp_essential_mat(
                 E,
@@ -209,7 +121,7 @@ class VOAgent:
 
         return R, t, bad_data
 
-    def decomp_essential_mat(self, E, q1, q2, mtx, initP):
+    def decomp_essential_mat(self, E, q1, q2, mtx, initP) -> list:
         """
         Decompose the Essential matrix
 
@@ -227,7 +139,7 @@ class VOAgent:
         """
 
         # Decompose the essential matrix
-        R1, R2, t = cv2.decomposeEssentialMat(E)
+        R1, R2, t = cv.decomposeEssentialMat(E)
         t = np.squeeze(t)
 
         # Make a list of the different possible pairs
@@ -250,7 +162,7 @@ class VOAgent:
         print("Relative scale: ", relative_scale)
         return [R1, t]
 
-    def sum_z_cal_relative_scale(self, R, t, mtx, q1, q2, initP):
+    def sum_z_cal_relative_scale(self, R, t, mtx, q1, q2, initP) -> tuple:
         """
         Computes the number of points in front of the "cameras" (in our case
         it's not two cameras taking two frames but just one camera taking consecutive
@@ -280,7 +192,7 @@ class VOAgent:
         P = np.matmul(np.concatenate((mtx, np.zeros((3, 1))), axis=1), T)
 
         # Triangulate the 3D points w.r.t. the first camera
-        hom_Q1 = cv2.triangulatePoints(initP, P, q1.T, q2.T)
+        hom_Q1 = cv.triangulatePoints(initP, P, q1.T, q2.T)
         # Also seen from cam 2
         hom_Q2 = np.matmul(T, hom_Q1)
 
@@ -466,3 +378,92 @@ class VOAgent:
         pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2
+
+
+class Position:
+    """
+    This class is used to keep track of the agent position,
+    it contains the functionalities to update the location based
+    on the rotation and translation between two consecutive frames.
+    """
+
+    def __init__(self):
+
+        self.world_pose = np.eye(4, 4)
+        self.cumul_R = np.eye(3, 3, dtype=np.float64)
+        self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
+        self.lastgoodpose = np.eye(4, 4)
+        self.heading = np.array([0, 0, 0], dtype=np.float64)
+
+    def update_pos(self, R, t, bad_data) -> None:
+        """
+        Update the agent position based on the rotation and translation
+
+        Parameters
+        ----------
+        R (ndarray): Rotation matrix
+        t (ndarray): Translation vector
+        bad_data (bool): flag to indicate if the data is bad
+        """
+
+        # Check if the data is bad. If data is bad
+        # then use the last good pose, otherwise update
+        # the last good pose with the current pose
+        self.heading = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
+
+        # TODO: there must be a better wahy to do this
+        if abs(self.heading[1]) >= 10:
+            bad_data = True
+
+        if bad_data:
+            R = self.lastgoodpose[:3, :3]
+            t = self.lastgoodpose[:3, 3]
+            sizestr2 = ""
+            for i in range(len(sizestr)):
+                sizestr2 += "X"
+            sizestr = sizestr2
+        else:
+            self.lastgoodpose = np.eye(4, 4)
+            self.lastgoodpose[:3, :3] = R
+            self.lastgoodpose[:3, 3] = t
+
+        # sizestr = "#"
+        # for i in range(int(abs(eulered[1])) // 1):
+        #     sizestr += "#"
+        # print(eulered.round(2), "\t", sizestr)
+
+        # Apply transformations
+        self.cumul_R = np.dot(R, self.cumul_R)
+        self.cumul_t = t + np.dot(R, self.cumul_t)
+
+        # v = R^T * v' - R^T * t
+        # invert the coordinates system from camera to world
+        self.world_pose[:3, :3] = self.cumul_R.T
+        self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
+
+    def rotationMatrixToEulerAngles(self, R) -> np.ndarray:
+        """
+        Convert a rotation matrix to Euler angles.
+
+        Parameters
+        ----------
+        R (ndarray): Rotation matrix
+
+        Returns
+        -------
+        ndarray: Euler angles
+        """
+        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+
+        singular = sy < 1e-6
+
+        if not singular:
+            x = math.atan2(R[2, 1], R[2, 2])
+            y = math.atan2(-R[2, 0], sy)
+            z = math.atan2(R[1, 0], R[0, 0])
+        else:
+            x = math.atan2(-R[1, 2], R[1, 1])
+            y = math.atan2(-R[2, 0], sy)
+            z = 0
+
+        return np.array([x, y, z])

@@ -1,15 +1,11 @@
 import cv2 as cv
 import numpy as np
 import json
-import pdb
-import math
 from common import *
 from copy import copy
 import os
 from odometry import VOAgent
 from kitti_loader import kittiLoader
-
-from scipy.spatial.transform import Rotation
 
 
 imgs_path = "data/sequence_14/images"
@@ -100,16 +96,15 @@ def update_map(pose, map):
     )
 
     # draw angle of rotation
-    eulered = odo.position.rotationMatrixToEulerAngles(R) * 180 / np.pi
-    cv2.putText(
+    cv.putText(
         updated_map,
-        str(eulered[1].round(2)),
+        str(odo.position.heading[1].round(2)),
         (10, updated_map.shape[0] // 10),
         cv.FONT_HERSHEY_PLAIN,
         updated_map.shape[0] // 100,
         (255, 255, 255),
         updated_map.shape[0] // 100,
-        cv2.LINE_AA,
+        cv.LINE_AA,
     )
     return updated_map
 
