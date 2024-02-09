@@ -434,8 +434,12 @@ class Position:
         # print(eulered.round(2), "\t", sizestr)
 
         # Apply transformations
+        print(self.heading[1])
         self.cumul_R = np.dot(R, self.cumul_R)
-        self.cumul_t = t + np.dot(R, self.cumul_t)
+
+        #compensation for rotation drift
+        rotation_penality = 1 - (abs(self.heading[1]) / 5)
+        self.cumul_t = t * rotation_penality + np.dot(R, self.cumul_t)
 
         # v = R^T * v' - R^T * t
         # invert the coordinates system from camera to world

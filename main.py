@@ -130,7 +130,7 @@ track_map = np.zeros((mapsize, mapsize, 3))
 # track_map = draw_gt_map(track_map)
 updated_gt_map = np.zeros((mapsize, mapsize, 3))
 
-for tqdm_idx in tqdm(range(STEPS)):
+for tqdm_idx in range(STEPS):
     if MODE == "video":
         for i in range(FRAMESKIP):
             ret, frame = cap.read()
@@ -143,6 +143,7 @@ for tqdm_idx in tqdm(range(STEPS)):
         for i in range(FRAMESKIP):
             frame, pose = kl.next_frame()
         updated_gt_map = update_map(pose, gt_map)
+        set_idx = 20
         ret = True
 
     if not ret:
