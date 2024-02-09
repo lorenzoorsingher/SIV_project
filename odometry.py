@@ -28,11 +28,10 @@ class Position:
 
         eulered = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
 
-        sizestr = "#"
-        for i in range(int(abs(eulered[1])) // 1):
-            sizestr += "#"
+        if abs(eulered[1]) >= 10:
+            bad_data = True
 
-        if abs(eulered[1]) >= 10 or bad_data:
+        if bad_data:
             R = self.lastgoodpose[:3, :3]
             t = self.lastgoodpose[:3, 3]
             sizestr2 = ""
@@ -44,6 +43,9 @@ class Position:
             self.lastgoodpose[:3, :3] = R
             self.lastgoodpose[:3, 3] = t
 
+        sizestr = "#"
+        for i in range(int(abs(eulered[1])) // 1):
+            sizestr += "#"
         print(eulered.round(2), "\t", sizestr)
 
         # Apply transformations
@@ -73,7 +75,7 @@ class Position:
 
 
 class Odometry:
-    def __init__(self, mtx, dist, buf_size=2, matcher_method=SIFT_KNN):
+    def __init__(self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN):
         self.frame_buffer = []
         self.position = Position()
         self.mtx = mtx
@@ -84,15 +86,27 @@ class Odometry:
         self.buf_size = buf_size
 
     def next_frame(self, lastFrame):
+        """
+        This function processes the last frame and updates the agent position
+        running visual odometry between two consecutive frames.
+
+        Parameters
+        ----------
+        - lastFrame: frame to be processed
+        """
+
+        # fill frames buffer
         if len(self.frame_buffer) < self.buf_size:
             self.frame_buffer.append(lastFrame)
             return
 
+        # extract and prepare first and last frames
         firstFrame = self.frame_buffer.pop(0)
         self.frame_buffer.append(lastFrame)
         img1 = cv.cvtColor(firstFrame, cv.COLOR_BGR2GRAY)
         img2 = cv.cvtColor(lastFrame, cv.COLOR_BGR2GRAY)
 
+        # undistort images id dist vector is present
         if not self.dist is None:
             uimg1 = cv.undistort(img1, self.mtx, self.dist)
             uimg2 = cv.undistort(img2, self.mtx, self.dist)
@@ -100,6 +114,7 @@ class Odometry:
             uimg1 = img1
             uimg2 = img2
 
+        # set matcher method
         if self.matcher_method == SIFT_KNN:
             matcher = self.SIFT_KNN
         elif self.matcher_method == SIFT_FLANN:
@@ -109,19 +124,33 @@ class Odometry:
         elif self.matcher_method == ORB_FLANN:
             matcher = self.ORB_FLANN
 
+        # get matched points
         pFrame1, pFrame2 = matcher(uimg1, uimg2)
 
-        R, t, bad_data = self.epipolarComputation(pFrame1, pFrame2)
+        # extract rotation and translation
+        R, t, bad_data = self.epipolar_computation(pFrame1, pFrame2)
 
+        # update agent position
         self.position.update_pos(R, t, bad_data)
 
         cv.imshow("frames", np.vstack([img2, uimg1]))
 
-    # def homographyComputation(self, pFrame1, pFrame2):
-    #     M, mask = cv.findHomography(pFrame1, pFrame2, cv.RANSAC, 5.0)
-    #     return M
+    def epipolar_computation(self, pFrame1, pFrame2):
+        """
+        Computes the essential matrix and extracts rotation and translation
+        from the points matched between two consecutive frames.
 
-    def epipolarComputation(self, pFrame1, pFrame2):
+        Parameters
+        ----------
+        - pFrame1 (ndarray): points from first frame
+        - pFrame2 (ndarray): points from second frame
+
+        Returns
+        -------
+        - R (ndarray): rotation matrix
+        - t (ndarray): translation vector
+        - bad_data (bool): flag to indicate if the data is bad
+        """
         bad_data = False
         if len(pFrame1) >= 6 and len(pFrame2) >= 6:
             E, _ = cv2.findEssentialMat(
@@ -132,7 +161,7 @@ class Odometry:
                 method=cv.RANSAC,
             )
 
-            R, t = decomp_essential_mat(
+            R, t = self.decomp_essential_mat(
                 E,
                 np.array(pFrame1, dtype=np.float32),
                 np.array(pFrame2, dtype=np.float32),
@@ -146,6 +175,99 @@ class Odometry:
             bad_data = True
 
         return R, t, bad_data
+
+    def decomp_essential_mat(self, E, q1, q2, mtx, initP):
+        """
+        Decompose the Essential matrix
+
+        Parameters
+        ----------
+        E (ndarray): Essential matrix
+        q1 (ndarray): The good keypoints matches position in i-1'th image
+        q2 (ndarray): The good keypoints matches position in i'th image
+        mtx (ndarray): The camera intrinsic matrix
+        initP (ndarray): Initial projection matrix
+
+        Returns
+        -------
+        right_pair (list): Contains the rotation matrix and translation vector
+        """
+
+        # Decompose the essential matrix
+        R1, R2, t = cv2.decomposeEssentialMat(E)
+        t = np.squeeze(t)
+
+        # Make a list of the different possible pairs
+        pairs = [[R1, t], [R1, -t], [R2, t], [R2, -t]]
+
+        # Check which solution there is the right one
+        z_sums = []
+        relative_scales = []
+        for R, t in pairs:
+            z_sum, scale = self.sum_z_cal_relative_scale(R, t, mtx, q1, q2, initP)
+            z_sums.append(z_sum)
+            relative_scales.append(scale)
+
+        # Select the pair there has the most points with positive z coordinate
+        right_pair_idx = np.argmax(z_sums)
+        right_pair = pairs[right_pair_idx]
+        relative_scale = relative_scales[right_pair_idx]
+        R1, t = right_pair
+        t = t * 1
+
+        return [R1, t]
+
+    def sum_z_cal_relative_scale(self, R, t, mtx, q1, q2, initP):
+        """
+        Computes the number of points in front of the "cameras" (in our case
+        it's not two cameras taking two frames but just one camera taking consecutive
+        frames from different positions) to determine which pair of R and t coming
+        from the essential matrix decomp is the valid one.
+
+        Parameters
+        ----------
+        R (ndarray): Rotation matrix
+        t (ndarray): Translation vector
+        mtx (ndarray): The camera intrinsic matrix
+        q1 (ndarray): The good keypoints matches position in i-1'th image
+        q2 (ndarray): The good keypoints matches position in i'th image
+        initP (ndarray): Initial projection matrix
+
+        Returns
+        -------
+        sum_of_pos_z_Q1 + sum_of_pos_z_Q2 (int): Number of points in front of the cameras
+        relative_scale (float): The relative scale
+        """
+        # Get the transformation matrix
+        T = np.eye(4, dtype=np.float64)
+        T[:3, :3] = R
+        T[:3, 3] = t
+        # Make the projection matrix
+        P = np.matmul(np.concatenate((mtx, np.zeros((3, 1))), axis=1), T)
+
+        # Triangulate the 3D points w.r.t. the first camera
+        hom_Q1 = cv2.triangulatePoints(initP, P, q1.T, q2.T)
+        # Also seen from cam 2
+        hom_Q2 = np.matmul(T, hom_Q1)
+
+        # Un-homogenize
+        uhom_Q1 = hom_Q1[:3, :] / hom_Q1[3, :]
+        uhom_Q2 = hom_Q2[:3, :] / hom_Q2[3, :]
+
+        # Find the number of points there has positive z coordinate in both cameras
+        sum_of_pos_z_Q1 = sum(uhom_Q1[2, :] > 0)
+        sum_of_pos_z_Q2 = sum(uhom_Q2[2, :] > 0)
+
+        # TODO verify correctness of relative scale
+        # Form point pairs and calculate the relative scale
+        relative_scale = np.mean(
+            np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
+            / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
+        )
+        if math.isnan(relative_scale):
+            relative_scale = 1
+
+        return sum_of_pos_z_Q1 + sum_of_pos_z_Q2, relative_scale
 
     def SIFT_KNN(self, img1, img2):
         # Initiate SIFT detector
@@ -181,6 +303,41 @@ class Odometry:
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
 
         # breakpoint()
+        return pFrame1, pFrame2
+
+    def SIFT_FLANN(self, img1, img2):
+        # Initiate SIFT detector
+        sift = cv.SIFT_create()
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(img1, None)
+        kp2, des2 = sift.detectAndCompute(img2, None)
+        # FLANN parameters
+        FLANN_INDEX_KDTREE = 1
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)  # or pass empty dictionary
+        flann = cv.FlannBasedMatcher(index_params, search_params)
+        matches = flann.knnMatch(des1, des2, k=2)
+        # Need to draw only good matches, so create a mask
+        matchesMask = [[0, 0] for i in range(len(matches))]
+        good = []
+        # ratio test as per Lowe's paper
+        for i, (m, n) in enumerate(matches):
+            if m.distance < 0.7 * n.distance:
+                matchesMask[i] = [1, 0]
+                good.append([m])
+
+        draw_params = dict(
+            matchColor=(0, 255, 0),
+            singlePointColor=(255, 0, 0),
+            matchesMask=matchesMask,
+            flags=cv.DrawMatchesFlags_DEFAULT,
+        )
+        img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
+
+        cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
+        cv.imshow("SIFT", img3)
+        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
+        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2
 
     def ORB_BF(self, img1, img2):
@@ -271,41 +428,6 @@ class Odometry:
             )
             cv.namedWindow("ORB", cv.WINDOW_NORMAL)
             cv.imshow("ORB", img3)
-        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
-        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
-        return pFrame1, pFrame2
-
-    def SIFT_FLANN(self, img1, img2):
-        # Initiate SIFT detector
-        sift = cv.SIFT_create()
-        # find the keypoints and descriptors with SIFT
-        kp1, des1 = sift.detectAndCompute(img1, None)
-        kp2, des2 = sift.detectAndCompute(img2, None)
-        # FLANN parameters
-        FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)  # or pass empty dictionary
-        flann = cv.FlannBasedMatcher(index_params, search_params)
-        matches = flann.knnMatch(des1, des2, k=2)
-        # Need to draw only good matches, so create a mask
-        matchesMask = [[0, 0] for i in range(len(matches))]
-        good = []
-        # ratio test as per Lowe's paper
-        for i, (m, n) in enumerate(matches):
-            if m.distance < 0.7 * n.distance:
-                matchesMask[i] = [1, 0]
-                good.append([m])
-
-        draw_params = dict(
-            matchColor=(0, 255, 0),
-            singlePointColor=(255, 0, 0),
-            matchesMask=matchesMask,
-            flags=cv.DrawMatchesFlags_DEFAULT,
-        )
-        img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
-
-        cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
-        cv.imshow("SIFT", img3)
         pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2

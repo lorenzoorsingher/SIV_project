@@ -45,10 +45,9 @@ if MODE == "video":
 if MODE == "kitti":
     do_images = "data/data_odometry_gray/dataset/sequences"
     do_poses = "data/data_odometry_poses/dataset/poses"
-    do_calib = "data/data_odometry_poses/dataset/sequences"
 
     SEQUENCE = 0
-    kl = kittiLoader(do_images, do_poses, do_calib, SEQUENCE)
+    kl = kittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
 
@@ -63,9 +62,12 @@ odo = Odometry(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN)
 
 
 def update_map(pose, map):
+
+    # extract x, y, z from pose as well as rotation
     x, _, z = pose.T[-1]
     R = pose.T[:3].T
 
+    # update trace of map
     map = cv.circle(
         map,
         (int(x) + maxdist, int(z) + maxdist),
@@ -74,8 +76,10 @@ def update_map(pose, map):
         2,
     )
 
+    # copy map to avoid overwriting of direction arrow
     updated_map = copy(map)
 
+    # create direction arrow pointing forward by 100 units
     forw = np.array([0, 0, 100, 1])
 
     newt = np.eye(4, 4)
@@ -83,6 +87,7 @@ def update_map(pose, map):
     newt[2, 3] = 1
     nx, _, nz, _ = newt @ forw
 
+    # draw direction arrow
     updated_map = cv.line(
         updated_map,
         (
@@ -94,6 +99,7 @@ def update_map(pose, map):
         2,
     )
 
+    # draw angle of rotation
     eulered = odo.position.rotationMatrixToEulerAngles(R) * 180 / np.pi
     cv2.putText(
         updated_map,
@@ -106,18 +112,6 @@ def update_map(pose, map):
         cv2.LINE_AA,
     )
     return updated_map
-
-
-def update_map2(x, z, map):
-    map = cv.circle(
-        map,
-        (int(x) + maxdist, int(z) + maxdist),
-        1,
-        (255, 255, 0),
-        2,
-    )
-
-    return map
 
 
 while True:
@@ -140,20 +134,10 @@ while True:
 
     odo.next_frame(frame)
 
-    # updated_track_map2 = update_map2(
-    #     odo.position.world_coo[0], odo.position.world_coo[2], track_map2
-    # )
-
     updated_track_map2 = update_map(odo.position.world_pose[:-1], track_map2)
-    # tmpPose = np.zeros((3, 4))
-    # tmpPose[:3, :3] = odo.position.cumul_R
-    # tmpPose[:3, 3] = odo.position.cumul_t
-    # updated_track_map = update_map(tmpPose, track_map)
 
     if True:
         cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map2]))
-        # cv.imshow("track_map", updated_track_map)
-        # cv.imshow("updated_track_map2", updated_track_map2)
 
         cv.waitKey(1)
 # prevFrame = newFrame

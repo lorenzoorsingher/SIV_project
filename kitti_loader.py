@@ -4,10 +4,9 @@ import numpy as np
 
 
 class kittiLoader:
-    def __init__(self, do_images, do_poses, do_calib, sequence_n=0):
+    def __init__(self, do_images, do_poses, sequence_n=0):
         self.do_images = do_images
         self.do_poses = do_poses
-        # self.do_calib = do_calib
         self.sequence_id = sequence_n
         self.cur_idx = 0
 
@@ -37,19 +36,6 @@ class kittiLoader:
         self.do_calib = do_images + "/" + self.sequence_id + "/calib.txt"
         calibstr = []
 
-        calib_file = "data/calib_cam_to_cam.txt"
-
-        # with open(calib_file) as f:
-        #     calibstr = [el.replace("\n", "") for el in f.readlines()[2:]]
-        #     calib = calibstr[:7]
-        #     # breakpoint()
-        #     calibdict = {}
-        #     for el in calib:
-        #         el = el.split(" ")
-        #         calibdict[el[0].replace(":", "")] = [float(num) for num in el[1:]]
-
-        #     self.mtx = np.array(calibdict["K_00"]).reshape(3, 3)
-        #     self.dist = np.zeros([1, 5])
         with open(self.do_calib) as f:
             calibstr = f.readlines()
             calib = [float(num) for num in calibstr[0][4:-1].split(" ")]
