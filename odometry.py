@@ -159,7 +159,6 @@ class VOAgent:
         right_pair = pairs[right_pair_idx]
         relative_scale = relative_scales[right_pair_idx]
 
-        print("RL ", relative_scale.round(3))
         R1, t = right_pair
         t = t * relative_scale
         return [R1, t]
@@ -458,8 +457,9 @@ class Position:
 
         # adjusted_t = t  # * rotation_penality
 
+        # also adjusts t according to absolute scale
         self.cumul_t = abs_scale * t + np.dot(R, self.cumul_t)
-        print("abs: ", abs_scale)
+
         self.cumul_R = np.dot(R, self.cumul_R)
 
         # v = R^T * v' - R^T * t

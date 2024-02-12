@@ -49,6 +49,7 @@ if MODE == "kitti":
     kl = kittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
+    kl.set_idx(1400)
     STEPS = kl.get_seqlen()
 
 
@@ -97,7 +98,7 @@ def update_map(pose, map, color=(255, 255, 0)):
         (10, updated_map.shape[0] // 10),
         cv.FONT_HERSHEY_PLAIN,
         updated_map.shape[0] // 100,
-        (255, 255, 255),
+        (0, 0, 0),
         updated_map.shape[0] // 100,
         cv.LINE_AA,
     )
@@ -105,7 +106,7 @@ def update_map(pose, map, color=(255, 255, 0)):
 
 
 def draw_gt_map(map):
-    for i in range(0, len(kl.poses)):
+    for i in tqdm(range(0, len(kl.poses))):
         pose = kl.poses[i]
         x, _, z = pose.T[-1]
 
@@ -114,8 +115,8 @@ def draw_gt_map(map):
             map,
             (int(x) + maxdist, int(z) + maxdist),
             1,
-            (0, 50, 50),
-            1,
+            (255, 0, 100),
+            4,
         )
     return map
 
@@ -123,6 +124,17 @@ def draw_gt_map(map):
 def compute_absolute_scale(old_pose, new_pose):
     """
     Computes the absolute scale between two poses
+
+    Parameters:
+    -----------
+
+    old_pose (np.ndarray): 3x4 matrix representing the old pose
+    new_pose (np.ndarray): 3x4 matrix representing the new pose
+
+    Returns:
+    --------
+    float: the absolute scale between the two poses
+
     """
     return np.linalg.norm(old_pose[:, 3] - new_pose[:, 3])
 
@@ -133,12 +145,15 @@ odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 maxdist = int(maxdist * 1.5)
 mapsize = maxdist * 2 + 10
 
-gt_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
-track_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
-updated_gt_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
+gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
+track_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
+updated_gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
 old_agent_pose = np.eye(3, 4, dtype=np.float64)
+
+track_map = draw_gt_map(track_map)
+gt_map = draw_gt_map(gt_map)
 
 
 errors = []
@@ -155,7 +170,7 @@ for tqdm_idx in range(STEPS):
     if MODE == "kitti":
         for i in range(FRAMESKIP):
             frame, gt_pose = kl.next_frame()
-        updated_gt_map = update_map(gt_pose, gt_map)
+        # updated_gt_map = update_map(gt_pose, gt_map)
 
         ret = True
 
@@ -167,21 +182,25 @@ for tqdm_idx in range(STEPS):
 
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
-    # breakpoint()
+    # error evaluation
     err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
-    color = (0, int(min(255, (1 - err * 1.4) * 255)), int(min(255, (err * 1.4) * 255)))
-    # color = (0, int(min(255, (1 - err * 1.4) * 255)), 0)
+    # print("error: ", err)
+    # color = (0, int(min(255, (1 - err * 1.4) * 255)), int(min(255, (err * 1.4) * 255)))
+
     old_gt_pose = gt_pose.copy()
     old_agent_pose = agent_pose.copy()
 
     errors.append(err)
 
-    # TODO: add error evaluation
+    # TODO: make error evalluation rotation invariant
     # TODO: add performance evaluation
     # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
+        color = (0, 200, 0)
         updated_track_map = update_map(agent_pose, track_map, color)
-        cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
+        # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
+        cv.imshow("gt_map", updated_track_map)
+        cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
 
 print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
