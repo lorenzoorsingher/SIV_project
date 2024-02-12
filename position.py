@@ -62,6 +62,4 @@ class Position:
         self.world_pose[:3, :3] = self.cumul_R.T
         self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
 
-        breakpoint()
-
         return self.world_pose

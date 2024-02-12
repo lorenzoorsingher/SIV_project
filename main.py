@@ -10,11 +10,6 @@ from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 
 
-imgs_path = "data/sequence_14/images"
-
-calib_path = "camera_data/calib.json"
-maxdist = 300
-
 cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
 # cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
@@ -23,6 +18,7 @@ np.set_printoptions(formatter={"all": lambda x: str(x)})
 DEBUG = True
 STEPS = 100
 FRAMESKIP = 1
+ORIGIN_COO = 300
 MODE = "kitti"
 
 if MODE == "video":
@@ -43,13 +39,12 @@ if MODE == "kitti":
     maxdist = int(kl.get_maxdist())
     kl.set_idx(1400)
     STEPS = kl.get_seqlen()
-
+    ORIGIN_COO = int(maxdist * 1.5)
 
 odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
 
-maxdist = int(maxdist * 1.5)
-mapsize = maxdist * 2 + 10
+mapsize = ORIGIN_COO * 2 + 10
 
 gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 track_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
@@ -58,12 +53,13 @@ updated_gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
 old_agent_pose = np.eye(3, 4, dtype=np.float64)
 
-track_map = draw_gt_map(track_map, maxdist, kl)
-gt_map = draw_gt_map(gt_map, maxdist, kl)
+track_map = draw_gt_map(track_map, ORIGIN_COO, kl)
+gt_map = draw_gt_map(gt_map, ORIGIN_COO, kl)
 
 
 errors = []
 
+abs_scale = 1
 for tqdm_idx in range(STEPS):
     if MODE == "video":
         for i in range(FRAMESKIP):
@@ -75,16 +71,13 @@ for tqdm_idx in range(STEPS):
         for i in range(FRAMESKIP):
             frame, gt_pose = kl.next_frame()
         # updated_gt_map = update_map(gt_pose, gt_map)
-
-    abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
-    # print(abs_scale)
+        # compute absolute scale from ground truth
+        abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
 
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
     # error evaluation
     err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
-    # print("error: ", err)
-    # color = (0, int(min(255, (1 - err * 1.4) * 255)), int(min(255, (err * 1.4) * 255)))
 
     old_gt_pose = gt_pose.copy()
     old_agent_pose = agent_pose.copy()
@@ -96,7 +89,7 @@ for tqdm_idx in range(STEPS):
     # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         color = (0, 200, 0)
-        updated_track_map = update_map(agent_pose, track_map, maxdist, color)
+        updated_track_map = update_map(agent_pose, track_map, ORIGIN_COO, color)
         # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.imshow("gt_map", updated_track_map)
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
