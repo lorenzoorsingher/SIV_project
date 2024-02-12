@@ -407,7 +407,6 @@ class Position:
         self.cumul_R = np.eye(3, 3, dtype=np.float64)
         self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
         self.lastgoodpose = np.eye(4, 4)
-        self.heading = np.array([0, 0, 0], dtype=np.float64)
 
     def update_pos(self, R, t, bad_data, abs_scale) -> np.ndarray:
         """
@@ -425,10 +424,10 @@ class Position:
         # the last good pose with the current pose
 
         if not bad_data:
-            self.heading = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
+            heading = rotationMatrixToEulerAngles(R) * 180 / np.pi
 
             # TODO: there must be a better wahy to do this
-            if abs(self.heading[1]) >= 10:
+            if abs(heading[1]) >= 10:
                 bad_data = True
 
         if bad_data:
@@ -444,54 +443,16 @@ class Position:
             self.lastgoodpose[:3, :3] = R
             self.lastgoodpose[:3, 3] = t
 
-        # sizestr = "#"
-        # for i in range(int(abs(eulered[1])) // 1):
-        #     sizestr += "#"
-        # print(eulered.round(2), "\t", sizestr)
-
-        # Apply transformations
-        # print(self.heading[1])
-
-        # # compensation for rotation drift
-        # rotation_penality = 1 - (abs(self.heading[1]) / 5)
-
-        # adjusted_t = t  # * rotation_penality
-
         # also adjusts t according to absolute scale
         self.cumul_t = abs_scale * t + np.dot(R, self.cumul_t)
 
         self.cumul_R = np.dot(R, self.cumul_R)
 
-        # v = R^T * v' - R^T * t
         # invert the coordinates system from camera to world
+        # with this formula v = R^T * v' - R^T * t
         self.world_pose[:3, :3] = self.cumul_R.T
         self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
 
+        breakpoint()
+
         return self.world_pose
-
-    def rotationMatrixToEulerAngles(self, R) -> np.ndarray:
-        """
-        Convert a rotation matrix to Euler angles.
-
-        Parameters
-        ----------
-        R (ndarray): Rotation matrix
-
-        Returns
-        -------
-        ndarray: Euler angles
-        """
-        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
-
-        singular = sy < 1e-6
-
-        if not singular:
-            x = math.atan2(R[2, 1], R[2, 2])
-            y = math.atan2(-R[2, 0], sy)
-            z = math.atan2(R[1, 0], R[0, 0])
-        else:
-            x = math.atan2(-R[1, 2], R[1, 1])
-            y = math.atan2(-R[2, 0], sy)
-            z = 0
-
-        return np.array([x, y, z])

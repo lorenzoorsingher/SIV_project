@@ -3,7 +3,7 @@ import cv2 as cv
 import numpy as np
 
 
-class kittiLoader:
+class KittiLoader:
     def __init__(self, do_images: str, do_poses: str, sequence_n: int = 0):
         """
         Load KITTI dataset
