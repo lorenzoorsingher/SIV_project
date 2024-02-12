@@ -24,15 +24,7 @@ DEBUG = True
 STEPS = 100
 FRAMESKIP = 1
 MODE = "kitti"
-if MODE == "imgs":
-    calib_path = "camera_data/calib_tum.json"
-    im_paths = [imgs_path + "/" + name for name in os.listdir(imgs_path)]
-    im_paths.sort()
-    idx = 0
 
-    data = json.load(open(calib_path))
-    mtx = np.array(data[0])
-    dist = np.array(data[1])
 if MODE == "video":
     calib_path = "camera_data/calib.json"
     video_path = "data/room_tour.MOV"
@@ -162,20 +154,13 @@ for tqdm_idx in range(STEPS):
     if MODE == "video":
         for i in range(FRAMESKIP):
             ret, frame = cap.read()
-    if MODE == "imgs":
-        for i in range(FRAMESKIP):
-            frame = cv.imread(im_paths[idx])
-            idx += 1
-        ret = True
+            if not ret:
+                break
+
     if MODE == "kitti":
         for i in range(FRAMESKIP):
             frame, gt_pose = kl.next_frame()
         # updated_gt_map = update_map(gt_pose, gt_map)
-
-        ret = True
-
-    if not ret:
-        break
 
     abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
     # print(abs_scale)
