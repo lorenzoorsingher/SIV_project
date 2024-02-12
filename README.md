@@ -39,6 +39,7 @@ SIV_project/                            # main project directory
 ├── common.py                           # Constants and common func
 ├── kitti_loader.py                     # KITTI loader class
 ├── main.py                             # main
-├── odometry.py                         # VOAgent and Position classes
+├── VOAgent.py                          # VOAgent class
+├── position.py                         # Position classe
 └── requirements.txt                    # Requirements
 ```

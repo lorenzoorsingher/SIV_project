@@ -7,6 +7,11 @@ from position import Position
 
 
 class VOAgent:
+    """
+    This class contains the functionalities to run visual odometry.
+    Feature matching, essential matrix computation and decomposition
+    """
+
     def __init__(self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN):
         """
         Initialize the Odometry object
