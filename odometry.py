@@ -40,7 +40,7 @@ class VOAgent:
         # fill frames buffer
         if len(self.frame_buffer) < self.buf_size:
             self.frame_buffer.append(lastFrame)
-            return
+            return np.eye(4, 4, dtype=np.float64)
 
         # extract and prepare first and last frames
         firstFrame = self.frame_buffer.pop(0)
@@ -73,9 +73,9 @@ class VOAgent:
         R, t, bad_data = self.epipolar_computation(pFrame1, pFrame2)
 
         # update agent position
-        self.position.update_pos(R, t, bad_data)
+        pose = self.position.update_pos(R, t, bad_data)
 
-        cv.imshow("frames", np.vstack([img2, uimg1]))
+        return pose
 
     def epipolar_computation(self, pFrame1, pFrame2) -> tuple:
         """
@@ -234,7 +234,8 @@ class VOAgent:
         for m, n in matches:
             if m.distance < 0.6 * n.distance:
                 good.append([m])
-        if True:
+
+        if IMG_DEBUG:
             img3 = cv.drawMatchesKnn(
                 img1,
                 kp1,
@@ -280,10 +281,12 @@ class VOAgent:
             matchesMask=matchesMask,
             flags=cv.DrawMatchesFlags_DEFAULT,
         )
-        img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
 
-        cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
-        cv.imshow("SIFT", img3)
+        if IMG_DEBUG:
+            img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
+
+            cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
+            cv.imshow("SIFT", img3)
         pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2
@@ -309,7 +312,7 @@ class VOAgent:
                 and abs(kp1[m.queryIdx].pt[1] - kp2[m.trainIdx].pt[1]) < thr
             ):
                 good.append([m])
-        if True:
+        if IMG_DEBUG:
             img3 = cv.drawMatchesKnn(
                 img1,
                 kp1,
@@ -363,7 +366,7 @@ class VOAgent:
             except ValueError:
                 return [], []
 
-        if True:
+        if IMG_DEBUG:
             # img3 = cv.drawMatchesKnn(img1,kp1,img2,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
             img3 = cv.drawMatchesKnn(
                 img1,
@@ -396,7 +399,7 @@ class Position:
         self.lastgoodpose = np.eye(4, 4)
         self.heading = np.array([0, 0, 0], dtype=np.float64)
 
-    def update_pos(self, R, t, bad_data) -> None:
+    def update_pos(self, R, t, bad_data) -> np.ndarray:
         """
         Update the agent position based on the rotation and translation
 
@@ -434,17 +437,22 @@ class Position:
         # print(eulered.round(2), "\t", sizestr)
 
         # Apply transformations
-        print(self.heading[1])
+        # print(self.heading[1])
         self.cumul_R = np.dot(R, self.cumul_R)
 
-        #compensation for rotation drift
+        # compensation for rotation drift
         rotation_penality = 1 - (abs(self.heading[1]) / 5)
-        self.cumul_t = t * rotation_penality + np.dot(R, self.cumul_t)
+
+        adjusted_t = t  # * rotation_penality
+
+        self.cumul_t = adjusted_t + np.dot(R, self.cumul_t)
 
         # v = R^T * v' - R^T * t
         # invert the coordinates system from camera to world
         self.world_pose[:3, :3] = self.cumul_R.T
         self.world_pose[:3, 3] = np.dot(-(self.cumul_R).T, self.cumul_t)
+
+        return self.world_pose
 
     def rotationMatrixToEulerAngles(self, R) -> np.ndarray:
         """

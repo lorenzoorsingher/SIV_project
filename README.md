@@ -4,7 +4,7 @@
 Project for Signal Image and Video, UniTN
 
 ## About
-blah blah blah
+The goal of the project is to build a Monocular Visual Odometry system from scratch, without the assistance of machine learning or neural networks, relaying on traditional computer vision tecniques 
 
 ### Project Structure
 

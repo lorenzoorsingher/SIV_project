@@ -16,7 +16,7 @@ calib_path = "camera_data/calib.json"
 maxdist = 300
 
 cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
-cv.namedWindow("frames", cv.WINDOW_NORMAL)
+# cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
@@ -52,18 +52,20 @@ if MODE == "kitti":
     STEPS = kl.get_seqlen()
 
 
-def update_map(pose, map):
+def update_map(pose, map, color=(255, 255, 0)):
 
     # extract x, y, z from pose as well as rotation
     x, _, z = pose.T[-1]
     R = pose.T[:3].T
+
+    print("color: ", color)
 
     # update trace of map
     map = cv.circle(
         map,
         (int(x) + maxdist, int(z) + maxdist),
         1,
-        (255, 255, 0),
+        color,
         2,
     )
 
@@ -125,10 +127,16 @@ odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
 maxdist = int(maxdist * 1.5)
 mapsize = maxdist * 2 + 10
-gt_map = np.zeros((mapsize, mapsize, 3))
-track_map = np.zeros((mapsize, mapsize, 3))
-# track_map = draw_gt_map(track_map)
-updated_gt_map = np.zeros((mapsize, mapsize, 3))
+
+gt_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
+track_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
+updated_gt_map = np.zeros((mapsize, mapsize, 3), dtype=np.uint8)
+
+old_gt_pose = np.eye(3, 4, dtype=np.float64)
+old_agent_pose = np.eye(3, 4, dtype=np.float64)
+
+
+errors = []
 
 for tqdm_idx in range(STEPS):
     if MODE == "video":
@@ -141,20 +149,30 @@ for tqdm_idx in range(STEPS):
         ret = True
     if MODE == "kitti":
         for i in range(FRAMESKIP):
-            frame, pose = kl.next_frame()
-        updated_gt_map = update_map(pose, gt_map)
-        set_idx = 20
+            frame, gt_pose = kl.next_frame()
+        updated_gt_map = update_map(gt_pose, gt_map)
+
         ret = True
 
     if not ret:
         break
 
-    odo.next_frame(frame)
+    agent_pose = odo.next_frame(frame)[:-1]
 
+    # breakpoint()
+    err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
+    color = (0, int(min(255, (1 - err * 1.4) * 255)), int(min(255, (err * 1.4) * 255)))
+    # color = (0, int(min(255, (1 - err * 1.4) * 255)), 0)
+    old_gt_pose = gt_pose.copy()
+    old_agent_pose = agent_pose.copy()
+
+    print(err)
+    errors.append(err)
+    print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
     # TODO: add error evaluation
     # TODO: add performance evaluation
 
     if DEBUG:
-        updated_track_map = update_map(odo.position.world_pose[:-1], track_map)
+        updated_track_map = update_map(agent_pose, track_map, color)
         cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.waitKey(1)
