@@ -41,26 +41,24 @@ if MODE == "kitti":
     STEPS = kl.get_seqlen()
     ORIGIN_COO = int(maxdist * 1.5)
 
+# create Visual Odometry Agent
 odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
-
+# create and prepare maps
 mapsize = ORIGIN_COO * 2 + 10
-
 gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 track_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 updated_gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
+track_map = draw_gt_map(track_map, ORIGIN_COO, kl)
 
+# initialize poses
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
 old_agent_pose = np.eye(3, 4, dtype=np.float64)
-
-track_map = draw_gt_map(track_map, ORIGIN_COO, kl)
-gt_map = draw_gt_map(gt_map, ORIGIN_COO, kl)
-
-
 errors = []
 
 abs_scale = 1
 for tqdm_idx in range(STEPS):
+
     if MODE == "video":
         for i in range(FRAMESKIP):
             ret, frame = cap.read()
