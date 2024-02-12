@@ -27,7 +27,7 @@ class VOAgent:
         # breakpoint()
         self.buf_size = buf_size
 
-    def next_frame(self, lastFrame) -> None:
+    def next_frame(self, lastFrame, abs_scale=1) -> np.ndarray:
         """
         This function processes the last frame and updates the agent position
         running visual odometry between two consecutive frames.
@@ -73,7 +73,7 @@ class VOAgent:
         R, t, bad_data = self.epipolar_computation(pFrame1, pFrame2)
 
         # update agent position
-        pose = self.position.update_pos(R, t, bad_data)
+        pose = self.position.update_pos(R, t, bad_data, abs_scale)
 
         return pose
 
@@ -117,6 +117,7 @@ class VOAgent:
             if abs(t.mean()) > 10:
                 bad_data = True
         else:
+            R = t = None
             bad_data = True
 
         return R, t, bad_data
@@ -157,6 +158,8 @@ class VOAgent:
         right_pair_idx = np.argmax(z_sums)
         right_pair = pairs[right_pair_idx]
         relative_scale = relative_scales[right_pair_idx]
+
+        print("RL ", relative_scale.round(3))
         R1, t = right_pair
         t = t * relative_scale
         return [R1, t]
@@ -205,11 +208,12 @@ class VOAgent:
 
         # TODO verify correctness of relative scale
         # Form point pairs and calculate the relative scale
+
         relative_scale = np.nanmean(
             np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
             / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
         )
-
+        # print(relative_scale)
         if math.isnan(relative_scale):
             relative_scale = 1
 
@@ -338,15 +342,22 @@ class VOAgent:
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
         # Use FLANN to Find the Best Keypoint Matches
-        FLANN_INDEX_LSH = 6
 
         index_params = dict(
             algorithm=FLANN_INDEX_LSH,
-            table_number=6,  # was 12
-            key_size=12,  # was 20
-            multi_probe_level=1,
+            table_number=12,  # was 12
+            key_size=16,  # was 20
+            multi_probe_level=2,
         )  # was 2
-        search_params = {}
+
+        # index_params = dict(
+        #     algorithm=FLANN_INDEX_AUTOTUNED,
+        #     target_precision=0.9,
+        #     build_weight=0.01,
+        #     memory_weight=0,
+        #     sample_fraction=0.0,
+        # )
+        search_params = dict(checks=100)
 
         flann = cv.FlannBasedMatcher(index_params, search_params)
 
@@ -399,7 +410,7 @@ class Position:
         self.lastgoodpose = np.eye(4, 4)
         self.heading = np.array([0, 0, 0], dtype=np.float64)
 
-    def update_pos(self, R, t, bad_data) -> np.ndarray:
+    def update_pos(self, R, t, bad_data, abs_scale) -> np.ndarray:
         """
         Update the agent position based on the rotation and translation
 
@@ -413,15 +424,18 @@ class Position:
         # Check if the data is bad. If data is bad
         # then use the last good pose, otherwise update
         # the last good pose with the current pose
-        self.heading = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
 
-        # TODO: there must be a better wahy to do this
-        if abs(self.heading[1]) >= 10:
-            bad_data = True
+        if not bad_data:
+            self.heading = self.rotationMatrixToEulerAngles(R) * 180 / np.pi
+
+            # TODO: there must be a better wahy to do this
+            if abs(self.heading[1]) >= 10:
+                bad_data = True
 
         if bad_data:
             R = self.lastgoodpose[:3, :3]
             t = self.lastgoodpose[:3, 3]
+            sizestr = ""
             sizestr2 = ""
             for i in range(len(sizestr)):
                 sizestr2 += "X"
@@ -438,14 +452,15 @@ class Position:
 
         # Apply transformations
         # print(self.heading[1])
+
+        # # compensation for rotation drift
+        # rotation_penality = 1 - (abs(self.heading[1]) / 5)
+
+        # adjusted_t = t  # * rotation_penality
+
+        self.cumul_t = abs_scale * t + np.dot(R, self.cumul_t)
+        print("abs: ", abs_scale)
         self.cumul_R = np.dot(R, self.cumul_R)
-
-        # compensation for rotation drift
-        rotation_penality = 1 - (abs(self.heading[1]) / 5)
-
-        adjusted_t = t  # * rotation_penality
-
-        self.cumul_t = adjusted_t + np.dot(R, self.cumul_t)
 
         # v = R^T * v' - R^T * t
         # invert the coordinates system from camera to world

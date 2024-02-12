@@ -58,8 +58,6 @@ def update_map(pose, map, color=(255, 255, 0)):
     x, _, z = pose.T[-1]
     R = pose.T[:3].T
 
-    print("color: ", color)
-
     # update trace of map
     map = cv.circle(
         map,
@@ -122,6 +120,13 @@ def draw_gt_map(map):
     return map
 
 
+def compute_absolute_scale(old_pose, new_pose):
+    """
+    Computes the absolute scale between two poses
+    """
+    return np.linalg.norm(old_pose[:, 3] - new_pose[:, 3])
+
+
 odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
 
@@ -157,7 +162,10 @@ for tqdm_idx in range(STEPS):
     if not ret:
         break
 
-    agent_pose = odo.next_frame(frame)[:-1]
+    abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
+    # print(abs_scale)
+
+    agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
     # breakpoint()
     err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
@@ -166,13 +174,15 @@ for tqdm_idx in range(STEPS):
     old_gt_pose = gt_pose.copy()
     old_agent_pose = agent_pose.copy()
 
-    print(err)
     errors.append(err)
-    print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
+
     # TODO: add error evaluation
     # TODO: add performance evaluation
-
+    # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         updated_track_map = update_map(agent_pose, track_map, color)
         cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.waitKey(1)
+
+print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
+breakpoint()
