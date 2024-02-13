@@ -66,6 +66,13 @@ class KittiLoader:
         """
         return np.array(self.poses).max()
 
+    def get_extremes(self) -> tuple:
+        max_x = int(np.array(self.poses)[:, :, 3][:, 0].max())
+        min_x = int(np.array(self.poses)[:, :, 3][:, 0].min())
+        max_z = int(np.array(self.poses)[:, :, 3][:, 2].max())
+        min_z = int(np.array(self.poses)[:, :, 3][:, 2].min())
+        return (max_x, min_x, max_z, min_z)
+
     def get_frame(self, idx) -> tuple:
         """
         Returns the image and pose at the given index

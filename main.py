@@ -5,6 +5,7 @@ from copy import copy
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
+
 from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
@@ -33,23 +34,34 @@ if MODE == "kitti":
     do_images = "data/data_odometry_gray/dataset/sequences"
     do_poses = "data/data_odometry_poses/dataset/poses"
 
-    SEQUENCE = 0
+    SEQUENCE = 2
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
-    kl.set_idx(1400)
+    kl.set_idx(0)
     STEPS = kl.get_seqlen()
     ORIGIN_COO = int(maxdist * 1.5)
 
 # create Visual Odometry Agent
 odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_KNN)
 
+(max_x, min_x, max_z, min_z) = kl.get_extremes()
+margin = 50
+max_x += margin
+min_x -= margin
+max_z += margin
+min_z -= margin
+
+size_z = max_z - min_z
+size_x = max_x - min_x
+map_size = (size_z, size_x, 3)
+origin = (-min_x, -min_z)
 # create and prepare maps
-mapsize = ORIGIN_COO * 2 + 10
-gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
-track_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
-updated_gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
-track_map = draw_gt_map(track_map, ORIGIN_COO, kl)
+
+# gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
+track_map = np.full(map_size, 255, dtype=np.uint8)
+updated_gt_map = np.full(map_size, 255, dtype=np.uint8)
+track_map = draw_gt_map(track_map, origin, kl)
 
 # initialize poses
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
@@ -87,7 +99,9 @@ for tqdm_idx in range(STEPS):
     # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         color = (0, 200, 0)
-        updated_track_map = update_map(agent_pose, track_map, ORIGIN_COO, color)
+        color = get_color(err, range=(0, 0.5))
+        # print("error: ", err)
+        updated_track_map = update_map(agent_pose, track_map, origin, color)
         # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.imshow("gt_map", updated_track_map)
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)

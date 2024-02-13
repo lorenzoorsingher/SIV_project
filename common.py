@@ -58,10 +58,19 @@ def eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose):
     gt_diff = (old_gt_pose - gt_pose)[:, 3]
     agent_diff = (old_agent_pose - agent_pose)[:, 3]
 
-    return np.linalg.norm(gt_diff - agent_diff)
+    Ra = agent_pose[:, :3]
+    Rg = gt_pose[:, :3]
+
+    new_a = Ra.T @ agent_diff
+    new_g = Rg.T @ gt_diff
+    new_err = np.linalg.norm(new_g - new_a)
+
+    err = np.linalg.norm(gt_diff - agent_diff)
+
+    return new_err
 
 
-def update_map(pose, map, mapsize, color=(255, 255, 0)):
+def update_map(pose, map, origin, color=(255, 255, 0)):
 
     # extract x, y, z from pose as well as rotation
     x, _, z = pose.T[-1]
@@ -70,7 +79,7 @@ def update_map(pose, map, mapsize, color=(255, 255, 0)):
     # update trace of map
     map = cv.circle(
         map,
-        (int(x) + mapsize, int(z) + mapsize),
+        (int(x) + origin[0], int(z) + origin[1]),
         1,
         color,
         2,
@@ -91,10 +100,10 @@ def update_map(pose, map, mapsize, color=(255, 255, 0)):
     updated_map = cv.line(
         updated_map,
         (
-            int(nx) + int(x) + mapsize,
-            int(nz) + int(z) + mapsize,
+            int(nx) + int(x) + origin[0],
+            int(nz) + int(z) + origin[1],
         ),
-        (int(x) + mapsize, int(z) + mapsize),
+        (int(x) + origin[0], int(z) + origin[1]),
         (255, 0, 255),
         2,
     )
@@ -116,7 +125,7 @@ def update_map(pose, map, mapsize, color=(255, 255, 0)):
     return updated_map
 
 
-def draw_gt_map(map: np.ndarray, mapsize: int, kl: KittiLoader):
+def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
     for i in tqdm(range(0, len(kl.poses))):
         pose = kl.poses[i]
         x, _, z = pose.T[-1]
@@ -124,9 +133,19 @@ def draw_gt_map(map: np.ndarray, mapsize: int, kl: KittiLoader):
         # update trace of map
         map = cv.circle(
             map,
-            (int(x) + mapsize, int(z) + mapsize),
+            (int(x) + origin[0], int(z) + origin[1]),
             1,
             (255, 0, 100),
             4,
         )
     return map
+
+
+def get_color(err, range=(0, 1)):
+    """
+    Get color based on error value
+    """
+    B = 0
+    G = min(int(255 - (err - range[0]) / (range[1] - range[0]) * 255), 255)
+    R = int(255 - G)
+    return (B, G, R)

@@ -350,7 +350,7 @@ class VOAgent:
         index_params = dict(
             algorithm=FLANN_INDEX_LSH,
             table_number=12,  # was 12
-            key_size=16,  # was 20
+            key_size=17,  # was 20
             multi_probe_level=2,
         )  # was 2
 
@@ -367,6 +367,9 @@ class VOAgent:
 
         # Added this per the Q & A
         if des1 is not None and len(des1) > 2 and des2 is not None and len(des2) > 2:
+            # breakpoint()
+            # des1 = np.float32(des1)
+            # des2 = np.float32(des2)
             matches = flann.knnMatch(des1, des2, k=2)
 
         # Store the Keypoint Matches that Pass Lowe's Ratio Test
@@ -375,7 +378,7 @@ class VOAgent:
         for i, pair in enumerate(matches):
             try:
                 m, n = pair
-                if m.distance < 0.7 * n.distance:
+                if m.distance < 0.75 * n.distance:
                     good.append([m])
 
             except ValueError:
