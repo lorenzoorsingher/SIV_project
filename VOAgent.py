@@ -68,8 +68,12 @@ class VOAgent:
             matcher = self.SIFT_FLANN
         elif self.matcher_method == ORB_BF:
             matcher = self.ORB_BF
+        elif self.matcher_method == ORB_KNN:
+            matcher = self.ORB_KNN
         elif self.matcher_method == ORB_FLANN:
             matcher = self.ORB_FLANN
+        elif self.matcher_method == SIFT_FLANN_LOWE:
+            matcher = self.SIFT_FLANN_LOWE
 
         # get matched points
         pFrame1, pFrame2 = matcher(uimg1, uimg2)
@@ -262,36 +266,34 @@ class VOAgent:
         # breakpoint()
         return pFrame1, pFrame2
 
-    def SIFT_FLANN(self, img1, img2):
+    def SIFT_FLANN_LOWE(self, img1, img2):
         # Initiate SIFT detector
         sift = cv.SIFT_create()
         # find the keypoints and descriptors with SIFT
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
         # FLANN parameters
-        FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)  # or pass empty dictionary
+        index_params = dict(
+            algorithm=FLANN_INDEX_KDTREE,
+            trees=5,
+        )
+
+        search_params = {}  # or pass empty dictionary
         flann = cv.FlannBasedMatcher(index_params, search_params)
         matches = flann.knnMatch(des1, des2, k=2)
+        # matches = flann.match(des1, des2)
         # Need to draw only good matches, so create a mask
         matchesMask = [[0, 0] for i in range(len(matches))]
         good = []
         # ratio test as per Lowe's paper
         for i, (m, n) in enumerate(matches):
-            if m.distance < 0.7 * n.distance:
+            if m.distance < 0.6 * n.distance:
                 matchesMask[i] = [1, 0]
                 good.append([m])
-
-        draw_params = dict(
-            matchColor=(0, 255, 0),
-            singlePointColor=(255, 0, 0),
-            matchesMask=matchesMask,
-            flags=cv.DrawMatchesFlags_DEFAULT,
-        )
-
+        print(len(good))
         if IMG_DEBUG:
-            img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, **draw_params)
+
+            img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, good, None)
 
             cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
             cv.imshow("SIFT", img3)
@@ -299,27 +301,107 @@ class VOAgent:
         pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
         return pFrame1, pFrame2
 
-    def ORB_BF(self, img1, img2):
+    def SIFT_FLANN(self, img1, img2):
+        # Initiate SIFT detector
+        sift = cv.SIFT_create()
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(img1, None)
+        kp2, des2 = sift.detectAndCompute(img2, None)
+        # FLANN parameters
+        index_params = dict(
+            algorithm=FLANN_INDEX_KDTREE,
+            trees=3,
+        )
+
+        search_params = dict(checks=50)  # or pass empty dictionary
+        flann = cv.FlannBasedMatcher(index_params, search_params)
+        matches = flann.match(des1, des2)
+
+        good = []
+
+        matches = sorted(matches, key=lambda x: x.distance)
+
+        good = [[x] for x in matches[:200]]
+
+        if IMG_DEBUG:
+
+            img3 = cv.drawMatchesKnn(
+                img1,
+                kp1,
+                img2,
+                kp2,
+                good,
+                None,
+                flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+            )
+            cv.namedWindow("SIFT", cv.WINDOW_NORMAL)
+            cv.imshow("SIFT", img3)
+        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
+        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
+        return pFrame1, pFrame2
+
+    def ORB_KNN(self, img1, img2):
         orb = cv.ORB_create()
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
         # create BFMatcher object
-        bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
+        bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=False)
+
         # Match descriptors.
+        # returns a list of k-ouples of DMatch objects
+        # each DMatch object contains the indices of the descriptors in the two images that match and the distance between them
+        matches = bf.knnMatch(des1, des2, k=2)
+
+        # Sort them in the order of their distance.
+        # matches = sorted(matches, key=lambda x: x.distance)
+
+        # Apply ratio test
+        good = []
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                good.append([m])
+
+        print(len(good))
+        if IMG_DEBUG:
+            img3 = cv.drawMatchesKnn(
+                img1,
+                kp1,
+                img2,
+                kp2,
+                good,
+                None,
+                flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+            )
+            cv.namedWindow("ORB", cv.WINDOW_NORMAL)
+            cv.imshow("ORB", img3)
+
+        pFrame1 = np.array([kp1[g[0].queryIdx].pt for g in good], dtype=np.float32)
+        pFrame2 = np.array([kp2[g[0].trainIdx].pt for g in good], dtype=np.float32)
+
+        # breakpoint()
+        return pFrame1, pFrame2
+
+    def ORB_BF(self, img1, img2):
+        orb = cv.ORB_create(nfeatures=3000, scoreType=cv.ORB_FAST_SCORE)
+        # find the keypoints and descriptors with ORB
+        kp1, des1 = orb.detectAndCompute(img1, None)
+        kp2, des2 = orb.detectAndCompute(img2, None)
+        # create BFMatcher object
+        bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
+
+        # Match descriptors.
+        # returns a list of k-ouples of DMatch objects
+        # each DMatch object contains the indices of the descriptors in the two images that match and the distance between them
         matches = bf.match(des1, des2)
+
         # Sort them in the order of their distance.
         matches = sorted(matches, key=lambda x: x.distance)
 
         # Apply ratio test
-        good = []
-        thr = 300
-        for m in matches:
-            if (
-                abs(kp1[m.queryIdx].pt[0] - kp2[m.trainIdx].pt[0]) < thr
-                and abs(kp1[m.queryIdx].pt[1] - kp2[m.trainIdx].pt[1]) < thr
-            ):
-                good.append([m])
+        good = [[x] for x in matches[:200]]
+
+        print(len(des1))
         if IMG_DEBUG:
             img3 = cv.drawMatchesKnn(
                 img1,
@@ -341,7 +423,7 @@ class VOAgent:
 
     def ORB_FLANN(self, img1, img2):
         # Initiate ORB detector
-        orb = cv.ORB_create()
+        orb = cv.ORB_create(nfeatures=3000, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
@@ -354,14 +436,7 @@ class VOAgent:
             multi_probe_level=2,
         )  # was 2
 
-        # index_params = dict(
-        #     algorithm=FLANN_INDEX_AUTOTUNED,
-        #     target_precision=0.9,
-        #     build_weight=0.01,
-        #     memory_weight=0,
-        #     sample_fraction=0.0,
-        # )
-        search_params = dict(checks=100)
+        search_params = dict(checks=50)
 
         flann = cv.FlannBasedMatcher(index_params, search_params)
 
@@ -378,7 +453,7 @@ class VOAgent:
         for i, pair in enumerate(matches):
             try:
                 m, n = pair
-                if m.distance < 0.75 * n.distance:
+                if m.distance < 0.7 * n.distance:
                     good.append([m])
 
             except ValueError:
