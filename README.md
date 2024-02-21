@@ -43,3 +43,43 @@ SIV_project/                            # main project directory
 ├── position.py                         # Position classe
 └── requirements.txt                    # Requirements
 ```
+
+## Usage
+
+install requirements
+
+```
+pip install -r requirements.txt
+```
+
+Download and extract <a href=https://www.cvlibs.net/datasets/kitti/eval_odometry.php>KITTI visual odometry</a> datasets in the <i>data</i> folder
+
+<a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>
+
+```
+data/data_odometry_gray
+```
+<a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI pose data</a>
+
+```
+data/data_odometry_poses
+```
+run main.py
+
+```
+python main.py
+```
+
+
+## TODO 
+
+- add some default test data
+- loop closure
+- comparative testing sys
+- you tell me
+
+
+## Authors 
+
+- [@lorenzoorsingher](https://github.com/lorenzoorsingher)
+- [@iiics](https://github.com/iiics)
