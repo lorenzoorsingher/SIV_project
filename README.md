@@ -57,7 +57,7 @@ Download and extract <a href=https://www.cvlibs.net/datasets/kitti/eval_odometry
 
 The full 22GB dataset with all 22 sequences is aviable at this link: <a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>. 
 
-A lighter 225MB version containig only sequence 22 is available at this link on <a href="https://drive.google.com/drive/folders/10kYdoqBTExbuCfZMXPpRT6pO4E5a42TR?usp=drive_link">Google Drive</a>.
+A lighter 225MB version containig only sequence 22 is available at this link on <a href="https://drive.google.com/drive/folders/1lh0QLIo15Rr3JK6u5jNcgM2uX-k4pOK9?usp=sharing">Google Drive</a>.
 
 ```
 data/data_odometry_gray
