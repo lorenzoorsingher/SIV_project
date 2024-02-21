@@ -34,7 +34,7 @@ if MODE == "kitti":
     do_images = "data/data_odometry_gray/dataset/sequences"
     do_poses = "data/data_odometry_poses/dataset/poses"
 
-    SEQUENCE = 0
+    SEQUENCE = 22
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
@@ -43,8 +43,9 @@ if MODE == "kitti":
     ORIGIN_COO = int(maxdist * 1.5)
 
 # create Visual Odometry Agent
-odo = VOAgent(mtx, dist, buf_size=1, matcher_method=ORB_FLANN)
+odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN_LOWE)
 
+# create and prepare maps
 (max_x, min_x, max_z, min_z) = kl.get_extremes()
 margin = 50
 max_x += margin
@@ -56,7 +57,6 @@ size_z = max_z - min_z
 size_x = max_x - min_x
 map_size = (size_z, size_x, 3)
 origin = (-min_x, -min_z)
-# create and prepare maps
 
 # gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 track_map = np.full(map_size, 255, dtype=np.uint8)

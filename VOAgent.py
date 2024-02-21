@@ -290,7 +290,7 @@ class VOAgent:
             if m.distance < 0.6 * n.distance:
                 matchesMask[i] = [1, 0]
                 good.append([m])
-        print(len(good))
+        # print(len(good))
         if IMG_DEBUG:
 
             img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, good, None)
@@ -362,7 +362,7 @@ class VOAgent:
             if m.distance < 0.7 * n.distance:
                 good.append([m])
 
-        print(len(good))
+        # print(len(good))
         if IMG_DEBUG:
             img3 = cv.drawMatchesKnn(
                 img1,
@@ -401,7 +401,7 @@ class VOAgent:
         # Apply ratio test
         good = [[x] for x in matches[:200]]
 
-        print(len(des1))
+        # print(len(des1))
         if IMG_DEBUG:
             img3 = cv.drawMatchesKnn(
                 img1,
