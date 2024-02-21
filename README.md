@@ -52,19 +52,24 @@ install requirements
 pip install -r requirements.txt
 ```
 
+### with KITTI
 Download and extract <a href=https://www.cvlibs.net/datasets/kitti/eval_odometry.php>KITTI visual odometry</a> datasets in the <i>data</i> folder
 
-<a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>
+The full 22GB dataset with all 22 sequences is aviable at this link: <a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>. 
+
+A lighter 225MB version containig only sequence 22 is available at this link on <a href="https://drive.google.com/drive/folders/10kYdoqBTExbuCfZMXPpRT6pO4E5a42TR?usp=drive_link">Google Drive</a>.
 
 ```
 data/data_odometry_gray
 ```
-<a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI pose data</a>
+
+In main.py set <i>SEQUENCE</i> to the number of the sequence you want to run. Keep in mind the light version of the dataset only contains sequence number 22 which is NOT included in the full dataset.
 
 ```
-data/data_odometry_poses
+SEQUENCE = 22
 ```
-run main.py
+
+Run main.py
 
 ```
 python main.py
