@@ -34,7 +34,7 @@ if MODE == "kitti":
     do_images = "data/data_odometry_gray/dataset/sequences"
     do_poses = "data/data_odometry_poses/dataset/poses"
 
-    SEQUENCE = 22
+    SEQUENCE = 2
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
