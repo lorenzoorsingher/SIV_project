@@ -82,6 +82,9 @@ python main.py
 - loop closure
 - comparative testing sys
 - you tell me
+- parametrized script 
+- implementation of error function 
+- pre-processing? (downsampling to make it faster, blurring (against noise -> more points), ...)
 
 
 ## Authors 
