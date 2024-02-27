@@ -9,18 +9,24 @@ from tqdm import tqdm
 from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
+from setup import get_args
 
-
-cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
-# cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
-DEBUG = True
-STEPS = 100
-FRAMESKIP = 1
-ORIGIN_COO = 300
-MODE = "kitti"
+args = get_args()
+
+DEBUG = not args["no_debug"]
+FRAMESKIP = args["frameskip"]
+MODE = args["mode"]
+SEQUENCE = args["sequence"]
+STEPS = args["steps"]
+FEAT_MATCHER = args["feature_matcher"]
+
+if DEBUG:
+    cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
+    # cv.namedWindow("frames", cv.WINDOW_NORMAL)
+
 
 if MODE == "video":
     calib_path = "camera_data/calib.json"
@@ -30,20 +36,21 @@ if MODE == "video":
     data = json.load(open(calib_path))
     mtx = np.array(data[0])
     dist = np.array(data[1])
+    if STEPS == -1:
+        STEPS = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
 if MODE == "kitti":
     do_images = "data/data_odometry_gray/dataset/sequences"
     do_poses = "data/data_odometry_poses/dataset/poses"
 
-    SEQUENCE = 2
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()
     maxdist = int(kl.get_maxdist())
     kl.set_idx(0)
-    STEPS = kl.get_seqlen()
-    ORIGIN_COO = int(maxdist * 1.5)
+    if STEPS == -1:
+        STEPS = kl.get_seqlen()
 
 # create Visual Odometry Agent
-odo = VOAgent(mtx, dist, buf_size=1, matcher_method=SIFT_FLANN_LOWE)
+odo = VOAgent(mtx, dist, buf_size=1, matcher_method=FEAT_MATCHER)
 
 # create and prepare maps
 (max_x, min_x, max_z, min_z) = kl.get_extremes()
