@@ -14,6 +14,7 @@ from setup import get_args
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 
+# get arguments
 args = get_args()
 
 DEBUG = not args["no_debug"]
@@ -21,16 +22,19 @@ FRAMESKIP = args["frameskip"]
 MODE = args["mode"]
 SEQUENCE = args["sequence"]
 STEPS = args["steps"]
-FEAT_MATCHER = args["feature_matcher"]
+FEAT_MATCHER = args["feat_match"]
+
+calib_path = args["calib_path"]
+video_path = args["video_path"]
+do_images = args["kitti_imgs"] + "/dataset/sequences"
+do_poses = args["kitti_poses"] + "/dataset/poses"
 
 if DEBUG:
     cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
-    # cv.namedWindow("frames", cv.WINDOW_NORMAL)
 
 
 if MODE == "video":
-    calib_path = "camera_data/calib.json"
-    video_path = "data/room_tour.MOV"
+
     cap = cv.VideoCapture(video_path)
 
     data = json.load(open(calib_path))
@@ -39,8 +43,6 @@ if MODE == "video":
     if STEPS == -1:
         STEPS = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
 if MODE == "kitti":
-    do_images = "data/data_odometry_gray/dataset/sequences"
-    do_poses = "data/data_odometry_poses/dataset/poses"
 
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
     mtx, dist = kl.get_params()

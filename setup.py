@@ -4,7 +4,9 @@ import argparse
 def get_args():
     parser = argparse.ArgumentParser(
         prog="vo.py",
-        description="Run visual odometry on any video",
+        description="""Run visual odometry on any video, 
+        when no arguments are provided the script will run
+        in KITTI mode on sequence 0 with SIFT_KNN.""",
     )
 
     parser.add_argument(
@@ -21,7 +23,7 @@ def get_args():
         "-s",
         "--sequence",
         type=int,
-        help="Index of KITTI sequence",
+        help="Index of KITTI sequence [kitti mode]",
         default=0,
         metavar="",
     )
@@ -54,13 +56,48 @@ def get_args():
 
     parser.add_argument(
         "-fm",
-        "--feature-matcher",
+        "--feat-match",
         type=int,
-        help="Set the feature matcher method. [0|1|2|3|4|5] (ORB_BF, ORB_FLANN, SIFT_FLANN, *SIFT_KNN, ORB_KNN, SIFT_FLANN_LOWE)",
+        help="Set the feature matching method. [0|1|2|3|4|5] (ORB_BF, ORB_FLANN, SIFT_FLANN, *SIFT_KNN, ORB_KNN, SIFT_FLANN_LOWE)",
         default=3,
         metavar="",
     )
 
-    args = vars(parser.parse_args())
+    parser.add_argument(
+        "-cp",
+        "--calib-path",
+        type=str,
+        help="Path to the calibration file. [video mode]",
+        default="camera_data/calib.json",
+        metavar="",
+    )
 
+    parser.add_argument(
+        "-vp",
+        "--video-path",
+        type=str,
+        help="Path to the video file. [video mode]",
+        default="data/video.MOV",
+        metavar="",
+    )
+
+    parser.add_argument(
+        "-ki",
+        "--kitti-imgs",
+        type=str,
+        help="Path to the data_odometry_gray folder. [kitti mode]",
+        default="data/data_odometry_gray",
+        metavar="",
+    )
+
+    parser.add_argument(
+        "-kp",
+        "--kitti-poses",
+        type=str,
+        help="Path to the data_odometry_poses folder. [kitti mode]",
+        default="data/data_odometry_poses",
+        metavar="",
+    )
+    args = vars(parser.parse_args())
+    print(args)
     return args
