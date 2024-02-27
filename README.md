@@ -52,7 +52,7 @@ install requirements
 pip install -r requirements.txt
 ```
 
-### with KITTI
+### With KITTI
 Download and extract <a href=https://www.cvlibs.net/datasets/kitti/eval_odometry.php>KITTI visual odometry</a> datasets in the <i>data</i> folder
 
 The full 22GB dataset with all 22 sequences is aviable at this link: <a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>. 
@@ -62,19 +62,39 @@ A lighter 225MB version containig only sequence 22 is available at this link on 
 ```
 data/data_odometry_gray
 ```
-
-In main.py set <i>SEQUENCE</i> to the number of the sequence you want to run. Keep in mind the light version of the dataset only contains sequence number 22 which is NOT included in the full dataset.
-
-```
-SEQUENCE = 22
-```
-
-Run main.py
+Run vo.py in kitty mode (default)
 
 ```
-python main.py
+python vo.py -m kitti
 ```
 
+You can provide the desired <i>sequence</i> index to be run 
+
+```
+python vo.py -m kitti -s 2
+```
+
+### With videos
+
+To run in video mode a camera calibration file must be provieded. The camera calibration file can be obtained using <i>camera_calibration_charuco.py</i> and the ChAruCo pattern inside the camera_data folder
+
+```
+python vo.py -m video -cp {calib/file/path.json} -vp {video/path.mp4}
+```
+
+
+### General Controls
+
+To the script can be provided the number of frames to analyze (default -1 means the entire length)
+
+```
+python vo.py -m kitti -s 2 -st 100
+```
+As well as the feature matching method used as combinations of SIFT, ORB and either bruteforce or FLANN plus some more
+
+```
+python vo.py -m kitti -s 2 -fm 2
+```
 
 ## TODO 
 
@@ -85,7 +105,7 @@ python main.py
 - implementation of error function 
 - pre-processing? (downsampling to make it faster, blurring (against noise -> more points), ...)
 - report
-
+- provide instructions for camera calibration
 
 
 ## Authors 

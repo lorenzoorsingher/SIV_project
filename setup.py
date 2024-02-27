@@ -32,7 +32,7 @@ def get_args():
         "-st",
         "--steps",
         type=int,
-        help="Number of frames to analize. -1 for all frames.",
+        help="Number of frames to analyse. -1 for all frames.",
         default=-1,
         metavar="",
     )
@@ -41,7 +41,7 @@ def get_args():
         "-f",
         "--frameskip",
         type=int,
-        help="Set the frequency of frames to analize",
+        help="Set the frequency of frames to analyse",
         default=1,
         metavar="",
     )
