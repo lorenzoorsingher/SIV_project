@@ -29,6 +29,44 @@ def compute_relative_pose_error(estimated_poses, ground_truth_poses):
     return aggregate_error
 
 
+def compute_relative_pose_error_custom(estimated_poses, ground_truth_poses):
+
+    assert len(estimated_poses) == len(
+        ground_truth_poses
+    )  # The number of estimated and ground truth poses must be the same
+
+    errors = []
+    for est_pose, gt_pose in zip(estimated_poses, ground_truth_poses):
+
+        # Aligns estimated pose with ground truth pose
+        aligned_est_pose = horn_alignment(est_pose, gt_pose)
+
+        est_t = aligned_est_pose.T[-1]
+        est_R = aligned_est_pose.T[:3].T
+
+        gt_t = gt_pose.T[-1]
+        gt_R = gt_pose.T[:3].T
+        print(
+            (rotationMatrixToEulerAngles(gt_R)[1] * 180 / np.pi).round(2),
+            " ",
+            (rotationMatrixToEulerAngles(est_pose.T[:3].T)[1] * 180 / np.pi).round(2),
+            " ",
+            (rotationMatrixToEulerAngles(est_R)[1] * 180 / np.pi).round(2),
+        )
+        # Computes error between aligned poses
+        translation_error = compute_translation_error(est_t, gt_t)
+        rotation_error = compute_rotation_error(est_R, gt_R)
+
+        # Aggregates error
+        total_error = translation_error  # + rotation_error
+        errors.append(total_error)
+
+    # Computes aggregate error metric (RMSE??)
+    aggregate_error = compute_aggregate_error(errors)
+
+    return aggregate_error
+
+
 # Alignment of poses with Horn's method
 def horn_alignment(estimated_poses, ground_truth_poses):
     # Computes centroids (centers of mass of both sets of poses)
