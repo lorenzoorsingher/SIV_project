@@ -96,6 +96,12 @@ As well as the feature matching method used as combinations of SIFT, ORB and eit
 python vo.py -m kitti -s 2 -fm 2
 ```
 
+And the amount of scaling to apply to the images
+
+```
+python vo.py -m kitti -sf 0.5
+```
+
 ## TODO 
 
 - add some default test data
