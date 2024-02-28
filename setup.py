@@ -49,7 +49,7 @@ def get_args():
     parser.add_argument(
         "-nd",
         "--no-debug",
-        action="store_false",
+        action="store_true",
         help="Do not show debug windows",
         default=False,
     )
@@ -98,6 +98,15 @@ def get_args():
         default="data/data_odometry_poses",
         metavar="",
     )
+
+    parser.add_argument(
+        "-sf",
+        "--scale-factor",
+        type=float,
+        help="Amount of scaling to apply to the images",
+        default=1.0,
+        metavar="",
+    )
+
     args = vars(parser.parse_args())
-    print(args)
     return args
