@@ -10,10 +10,9 @@ from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 from setup import get_args
-
+from evaluation import compute_relative_pose_error
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
-
 # get arguments
 args = get_args()
 
@@ -23,6 +22,7 @@ MODE = args["mode"]
 SEQUENCE = args["sequence"]
 STEPS = args["steps"]
 FEAT_MATCHER = args["feat_match"]
+SCALE = args["scale_factor"]
 
 calib_path = args["calib_path"]
 video_path = args["video_path"]
@@ -52,7 +52,9 @@ if MODE == "kitti":
         STEPS = kl.get_seqlen()
 
 # create Visual Odometry Agent
-odo = VOAgent(mtx, dist, buf_size=1, matcher_method=FEAT_MATCHER)
+odo = VOAgent(
+    mtx, dist, buf_size=1, matcher_method=FEAT_MATCHER, scale_factor=SCALE, debug=DEBUG
+)
 
 # create and prepare maps
 (max_x, min_x, max_z, min_z) = kl.get_extremes()
@@ -77,8 +79,11 @@ old_gt_pose = np.eye(3, 4, dtype=np.float64)
 old_agent_pose = np.eye(3, 4, dtype=np.float64)
 errors = []
 
+est_poses = []
+gt_poses = []
+
 abs_scale = 1
-for tqdm_idx in range(STEPS):
+for tqdm_idx in tqdm(range(STEPS)):
 
     if MODE == "video":
         for i in range(FRAMESKIP):
@@ -95,20 +100,25 @@ for tqdm_idx in range(STEPS):
 
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
+    # est_poses.append(copy(agent_pose))
+    # gt_poses.append(copy(gt_pose))
+    # out = compute_relative_pose_error(copy(est_poses), copy(gt_poses))
+    # print(out)
+    # if (tqdm_idx + 1) % 100000 == 0:
+    #     breakpoint()
     # error evaluation
-    err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
+
+    # err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
 
     old_gt_pose = gt_pose.copy()
     old_agent_pose = agent_pose.copy()
-
-    errors.append(err)
 
     # TODO: make error evalluation rotation invariant
     # TODO: add performance evaluation
     # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         color = (0, 200, 0)
-        color = get_color(err, range=(0, 0.5))
+        # color = get_color(err, range=(0, 0.5))
         # print("error: ", err)
         updated_track_map = update_map(agent_pose, track_map, origin, color)
         # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
@@ -116,5 +126,7 @@ for tqdm_idx in range(STEPS):
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
 
-print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
-breakpoint()
+# print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
+
+
+print("okokok")
