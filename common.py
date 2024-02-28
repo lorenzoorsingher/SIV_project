@@ -127,7 +127,7 @@ def update_map(pose, map, origin, color=(255, 255, 0)):
 
 
 def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
-    for i in tqdm(range(0, len(kl.poses))):
+    for i in range(0, len(kl.poses)):
         pose = kl.poses[i]
         x, _, z = pose.T[-1]
 
