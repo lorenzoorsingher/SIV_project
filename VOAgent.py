@@ -13,7 +13,14 @@ class VOAgent:
     """
 
     def __init__(
-        self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN, scale_factor=1, debug=True
+        self,
+        mtx,
+        dist,
+        buf_size=1,
+        matcher_method=SIFT_KNN,
+        scale_factor=1,
+        denoise=0,
+        debug=True,
     ):
         """
         Initialize the Odometry object
@@ -24,18 +31,24 @@ class VOAgent:
         dist (ndarray): Distortion coefficients
         buf_size (int): Frames buffer size
         matcher_method (int): Feature matching method
+        scale_factor (float): Scale factor for images
+        denoise (int): Amount of blur to apply to the images
+        debug (bool): Flag to enable image debugging
         """
         self.frame_buffer = []
         self.position = Position()
-        self.scale_factor = scale_factor
+
         tmp_mtx = mtx * scale_factor
         tmp_mtx[-1][-1] = 1.0
         self.mtx = tmp_mtx
         self.dist = dist
         self.proj = np.hstack([self.mtx, np.array([[0], [0], [0]])])
+
+        self.scale_factor = scale_factor
         self.matcher_method = matcher_method
-        # breakpoint()
         self.buf_size = buf_size
+        self.denoise = denoise
+
         self.debug = debug
 
     def next_frame(self, lastFrame, abs_scale=1) -> np.ndarray:
@@ -45,7 +58,8 @@ class VOAgent:
 
         Parameters
         ----------
-        lastFrame: frame to be processed
+        lastFrame (ndarray): frame to be processed
+        abs_scale (float): absolute scale if provided from ground truth
         """
 
         # fill frames buffer
@@ -63,6 +77,10 @@ class VOAgent:
         if self.scale_factor != 1:
             img1 = cv.resize(img1, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
             img2 = cv.resize(img2, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
+
+        if self.denoise > 0:
+            img1 = cv.GaussianBlur(img1, (self.denoise, self.denoise), 0)
+            img2 = cv.GaussianBlur(img2, (self.denoise, self.denoise), 0)
 
         # undistort images id dist vector is present
         if not self.dist is None:

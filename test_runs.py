@@ -15,31 +15,38 @@ feature_matchers = [
 ]
 scales = [0.25, 0.5, 1]
 
+denoise = [0]
+
 sequences = [0]
 
 steps = 30
 
 for sequence in sequences:
     for scale in scales:
-        for fm, idx in feature_matchers:
-            print("\n\n----------------------------------------------")
-            print(
-                "Running sequence",
-                0,
-                " with scale: ",
-                scale,
-                " and feature matcher: ",
-                fm,
-            )
-            os.system(
-                sys.executable
-                + " vo.py -st "
-                + str(steps)
-                + " -s "
-                + str(sequence)
-                + " -sf "
-                + str(scale)
-                + " -fm "
-                + str(idx)
-                + " -nd"
-            )
+        for denoise_val in denoise:
+            for fm, idx in feature_matchers:
+                print("\n\n----------------------------------------------")
+                print(
+                    "Running sequence",
+                    sequence,
+                    " with scale: ",
+                    scale,
+                    " denoising: ",
+                    denoise_val,
+                    " feature matcher: ",
+                    fm,
+                )
+                os.system(
+                    sys.executable
+                    + " vo.py -st "
+                    + str(steps)
+                    + " -s "
+                    + str(sequence)
+                    + " -sf "
+                    + str(scale)
+                    + " -fm "
+                    + str(idx)
+                    + " -de "
+                    + str(denoise_val)
+                    + " -nd"
+                )

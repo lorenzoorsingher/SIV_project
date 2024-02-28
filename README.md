@@ -107,9 +107,9 @@ python vo.py -m kitti -sf 0.5
 - add some default test data
 - loop closure
 - comparative testing sys
-- parametrized script 
+- <strike>parametrize script</strike>
 - implementation of error function 
-- pre-processing? (downsampling to make it faster, blurring (against noise -> more points), ...)
+- <strike>pre-processing (downsampling and denoising)</strike>
 - report
 - provide instructions for camera calibration
 

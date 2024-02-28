@@ -108,5 +108,14 @@ def get_args():
         metavar="",
     )
 
+    parser.add_argument(
+        "-de",
+        "--denoise",
+        type=int,
+        help="Amount (size of kernel) of gaussian blur to apply to the images for denoising. Default 0",
+        default=0,
+        metavar="",
+    )
+
     args = vars(parser.parse_args())
     return args

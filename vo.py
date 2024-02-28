@@ -23,6 +23,7 @@ SEQUENCE = args["sequence"]
 STEPS = args["steps"]
 FEAT_MATCHER = args["feat_match"]
 SCALE = args["scale_factor"]
+DENOISE = args["denoise"]
 
 calib_path = args["calib_path"]
 video_path = args["video_path"]
@@ -53,7 +54,13 @@ if MODE == "kitti":
 
 # create Visual Odometry Agent
 odo = VOAgent(
-    mtx, dist, buf_size=1, matcher_method=FEAT_MATCHER, scale_factor=SCALE, debug=DEBUG
+    mtx,
+    dist,
+    buf_size=1,
+    matcher_method=FEAT_MATCHER,
+    scale_factor=SCALE,
+    denoise=DENOISE,
+    debug=DEBUG,
 )
 
 # create and prepare maps
