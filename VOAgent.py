@@ -12,7 +12,9 @@ class VOAgent:
     Feature matching, essential matrix computation and decomposition
     """
 
-    def __init__(self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN):
+    def __init__(
+        self, mtx, dist, buf_size=1, matcher_method=SIFT_KNN, scale_factor=1, debug=True
+    ):
         """
         Initialize the Odometry object
 
@@ -25,12 +27,16 @@ class VOAgent:
         """
         self.frame_buffer = []
         self.position = Position()
-        self.mtx = mtx
+        self.scale_factor = scale_factor
+        tmp_mtx = mtx * scale_factor
+        tmp_mtx[-1][-1] = 1.0
+        self.mtx = tmp_mtx
         self.dist = dist
-        self.proj = np.hstack([mtx, np.array([[0], [0], [0]])])
+        self.proj = np.hstack([self.mtx, np.array([[0], [0], [0]])])
         self.matcher_method = matcher_method
         # breakpoint()
         self.buf_size = buf_size
+        self.debug = debug
 
     def next_frame(self, lastFrame, abs_scale=1) -> np.ndarray:
         """
@@ -50,8 +56,13 @@ class VOAgent:
         # extract and prepare first and last frames
         firstFrame = self.frame_buffer.pop(0)
         self.frame_buffer.append(lastFrame)
+
         img1 = cv.cvtColor(firstFrame, cv.COLOR_BGR2GRAY)
         img2 = cv.cvtColor(lastFrame, cv.COLOR_BGR2GRAY)
+
+        if self.scale_factor != 1:
+            img1 = cv.resize(img1, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
+            img2 = cv.resize(img2, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
 
         # undistort images id dist vector is present
         if not self.dist is None:
@@ -247,7 +258,7 @@ class VOAgent:
             if m.distance < 0.6 * n.distance:
                 good.append([m])
 
-        if IMG_DEBUG:
+        if self.debug:
             img3 = cv.drawMatchesKnn(
                 img1,
                 kp1,
