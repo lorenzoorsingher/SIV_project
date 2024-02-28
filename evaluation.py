@@ -1,4 +1,5 @@
 import numpy as np
+from common import rotationMatrixToEulerAngles
 
 
 def compute_relative_pose_error(estimated_poses, ground_truth_poses):
