@@ -3,9 +3,21 @@
 
 Project for Signal Image and Video, UniTN
 
+<div style="text-align:center;">
+<img src="images/ORB.png">
+<img src="images/og.png">
+
+</div>
+
 ## About
 The goal of the project is to build a Monocular Visual Odometry system from scratch, without the assistance of machine learning or neural networks, relaying only traditional computer vision tecniques. 
 The main objective is to construct a robust system that can be used on different kinds of cameras by providing an easy to use pipeline that goes from calibration to exploration.
+
+<br>
+<div style="text-align:center;">
+<img src="images/track.png" width=30%>
+</div>
+<br>
 
 ## General Information
 
@@ -38,8 +50,11 @@ SIV_project/                            # main project directory
 ├── camera_calibration_normal.py        # Calib script for standard board
 ├── common.py                           # Constants and common func
 ├── kitti_loader.py                     # KITTI loader class
-├── main.py                             # main
+├── vo.py                               # run script
+├── setup.py                            # arguments parsing
+├── test_runs.py                        # runs many combinations
 ├── VOAgent.py                          # VOAgent class
+├── evaluation.py                       # performance metrics
 ├── position.py                         # Position classe
 └── requirements.txt                    # Requirements
 ```
