@@ -77,7 +77,7 @@ A lighter 225MB version containig only sequence 22 is available at this link on 
 ```
 data/data_odometry_gray
 ```
-Run vo.py in kitty mode (default)
+Run vo.py in kitti mode (default)
 
 ```
 python vo.py -m kitti

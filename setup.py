@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument(
         "-m",
         "--mode",
-        choices=["video", "kitty"],
+        choices=["video", "kitti"],
         type=str,
         help="Set the input mode for VO. ['video'|'kitti']",
         default="kitti",
