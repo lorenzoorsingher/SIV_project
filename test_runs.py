@@ -4,6 +4,7 @@ import numpy as np
 import json
 import shutil
 import sys
+import time
 
 feature_matchers = [
     ("ORB_BF", 0),
@@ -21,10 +22,19 @@ sequences = [0]
 
 steps = 30
 
+out_path = os.getcwd() + "/output/run_" + str(time.time())[:-8] + "/"
+if not os.path.exists(out_path):
+    os.makedirs(out_path)
+
+index = 0
 for sequence in sequences:
     for scale in scales:
         for denoise_val in denoise:
             for fm, idx in feature_matchers:
+                eval_path = out_path + "eval_" + str(index)
+                if not os.path.exists(eval_path):
+                    os.makedirs(eval_path)
+                index += 1
                 print("\n\n----------------------------------------------")
                 print(
                     "Running sequence",
@@ -42,6 +52,8 @@ for sequence in sequences:
                     + str(steps)
                     + " -s "
                     + str(sequence)
+                    + " -o "
+                    + eval_path
                     + " -sf "
                     + str(scale)
                     + " -fm "

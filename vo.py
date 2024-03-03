@@ -1,6 +1,7 @@
 import os
 import json
 from copy import copy
+import time
 
 import cv2 as cv
 import numpy as np
@@ -10,7 +11,7 @@ from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 from setup import get_args
-from evaluation import compute_relative_pose_error
+from evaluation import compute_mockup_error, save_metrics
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 # get arguments
@@ -25,10 +26,19 @@ FEAT_MATCHER = args["feat_match"]
 SCALE = args["scale_factor"]
 DENOISE = args["denoise"]
 
+out_path = args["output"]
 calib_path = args["calib_path"]
 video_path = args["video_path"]
 do_images = args["kitti_imgs"] + "/dataset/sequences"
 do_poses = args["kitti_poses"] + "/dataset/poses"
+
+### THIS WILL BE REMOVED
+if out_path == "":
+    out_path = "/output/run_" + str(time.time())[:-8] + "/"
+    if not os.path.exists(os.getcwd() + out_path):
+        os.makedirs(os.getcwd() + out_path)
+###
+
 
 if DEBUG:
     cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
@@ -88,6 +98,7 @@ errors = []
 
 est_poses = []
 gt_poses = []
+errors = []
 
 abs_scale = 1
 for tqdm_idx in tqdm(range(STEPS)):
@@ -107,13 +118,16 @@ for tqdm_idx in tqdm(range(STEPS)):
 
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
-    # est_poses.append(copy(agent_pose))
-    # gt_poses.append(copy(gt_pose))
+    est_poses.append(copy(agent_pose))
+    gt_poses.append(copy(gt_pose))
     # out = compute_relative_pose_error(copy(est_poses), copy(gt_poses))
     # print(out)
     # if (tqdm_idx + 1) % 100000 == 0:
     #     breakpoint()
     # error evaluation
+
+    err = compute_mockup_error(agent_pose, gt_pose)
+    errors.append(err)
 
     # err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
 
@@ -133,7 +147,6 @@ for tqdm_idx in tqdm(range(STEPS)):
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
 
-# print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
-
-
-print("okokok")
+# only runs if output path is set
+if out_path != "":
+    save_metrics(est_poses, gt_poses, errors, settings=args, output_path=out_path)

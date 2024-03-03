@@ -1,4 +1,7 @@
+import json
 import numpy as np
+import matplotlib.pyplot as plt
+
 from common import rotationMatrixToEulerAngles
 
 
@@ -22,44 +25,6 @@ def compute_relative_pose_error(estimated_poses, ground_truth_poses):
 
         # Aggregates error
         total_error = translation_error + rotation_error
-        errors.append(total_error)
-
-    # Computes aggregate error metric (RMSE??)
-    aggregate_error = compute_aggregate_error(errors)
-
-    return aggregate_error
-
-
-def compute_relative_pose_error_custom(estimated_poses, ground_truth_poses):
-
-    assert len(estimated_poses) == len(
-        ground_truth_poses
-    )  # The number of estimated and ground truth poses must be the same
-
-    errors = []
-    for est_pose, gt_pose in zip(estimated_poses, ground_truth_poses):
-
-        # Aligns estimated pose with ground truth pose
-        aligned_est_pose = horn_alignment(est_pose, gt_pose)
-
-        est_t = aligned_est_pose.T[-1]
-        est_R = aligned_est_pose.T[:3].T
-
-        gt_t = gt_pose.T[-1]
-        gt_R = gt_pose.T[:3].T
-        print(
-            (rotationMatrixToEulerAngles(gt_R)[1] * 180 / np.pi).round(2),
-            " ",
-            (rotationMatrixToEulerAngles(est_pose.T[:3].T)[1] * 180 / np.pi).round(2),
-            " ",
-            (rotationMatrixToEulerAngles(est_R)[1] * 180 / np.pi).round(2),
-        )
-        # Computes error between aligned poses
-        translation_error = compute_translation_error(est_t, gt_t)
-        rotation_error = compute_rotation_error(est_R, gt_R)
-
-        # Aggregates error
-        total_error = translation_error  # + rotation_error
         errors.append(total_error)
 
     # Computes aggregate error metric (RMSE??)
@@ -163,3 +128,60 @@ def compute_aggregate_error(errors):
     aggregate_error = np.sqrt(np.mean(errors_array**2))
 
     return aggregate_error
+
+
+def compute_mockup_error(estimated_pose, ground_truth_pose):
+    """
+    Mockup function to compute the error between estimated and ground truth poses.
+
+    Parameters:
+        estimated_pose (numpy array): Estimated pose.
+        ground_truth_pose (numpy array): Ground truth pose.
+
+    Returns:
+        error (float): Error between estimated and ground truth poses.
+    """
+
+    # Compute error between estimated and ground truth poses
+    error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1)
+
+    return error
+
+
+def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output"):
+    """
+    Saves metrics (estimated poses, ground truth poses, and errors) to a file.
+
+    Parameters:
+        est_poses (list): List of estimated poses.
+        gt_poses (list): List of ground truth poses.
+        errors (list): List of errors.
+        output_path (str): Path to the output file.
+    """
+    est_dump = output_path + "/est.json"
+    gt_dump = output_path + "/gt.json"
+    err_dump = output_path + "/err.json"
+    settings_path = output_path + "/settings.json"
+
+    flattend = [np.array(pos).flatten().tolist() for pos in est_poses]
+    with open(est_dump, "w", encoding="utf-8") as f:
+        json.dump(flattend, f, ensure_ascii=False, indent=4)
+
+    flattend = [pos.flatten().tolist() for pos in gt_poses]
+    with open(gt_dump, "w", encoding="utf-8") as f:
+        json.dump(flattend, f, ensure_ascii=False, indent=4)
+
+    with open(err_dump, "w", encoding="utf-8") as f:
+        json.dump(errors, f, ensure_ascii=False, indent=4)
+
+    settings["avg_error"] = str(np.mean(errors).round(3))
+    settings["max_error"] = str(np.max(errors).round(3))
+
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, ensure_ascii=False, indent=4)
+    fig, ax = plt.subplots()
+    ax.plot(errors)
+    plt.savefig(output_path + "/error.png", bbox_inches="tight")
+
+    print("Metrics saved to", output_path)
+    print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))

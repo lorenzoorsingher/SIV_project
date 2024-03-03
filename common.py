@@ -12,6 +12,8 @@ SIFT_FLANN = 2
 SIFT_KNN = 3
 ORB_KNN = 4
 SIFT_FLANN_LOWE = 5
+FM = ["ORB_BF", "ORB_FLANN", "SIFT_FLANN", "SIFT_KNN", "ORB_KNN", "SIFT_FLANN_LOWE"]
+
 # consts for FLANN
 FLANN_INDEX_LINEAR = 0
 FLANN_INDEX_KDTREE = 1
@@ -140,6 +142,28 @@ def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
             4,
         )
     return map
+
+
+def draw_maps(poses):
+    (max_x, min_x, max_z, min_z) = 0, 0, 0, 0
+
+    for pos in poses:
+        max_x = max(max_x, int(np.array(pos)[:, :, 3][:, 0].max()))
+        min_x = min(min_x, int(np.array(pos)[:, :, 3][:, 0].min()))
+        max_z = max(max_z, int(np.array(pos)[:, :, 3][:, 2].max()))
+        min_z = min(min_x, int(np.array(pos)[:, :, 3][:, 2].min()))
+    margin = 50
+    max_x += margin
+    min_x -= margin
+    max_z += margin
+    min_z -= margin
+
+    size_z = max_z - min_z
+    size_x = max_x - min_x
+    map_size = (size_z, size_x, 3)
+    origin = (-min_x, -min_z)
+
+    track_map = np.full(map_size, 255, dtype=np.uint8)
 
 
 def get_color(err, range=(0, 1)):

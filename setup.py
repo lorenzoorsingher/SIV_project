@@ -47,6 +47,15 @@ def get_args():
     )
 
     parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Output folder for the results",
+        default="",
+        metavar="",
+    )
+
+    parser.add_argument(
         "-nd",
         "--no-debug",
         action="store_true",
