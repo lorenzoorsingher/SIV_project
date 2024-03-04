@@ -141,11 +141,26 @@ def compute_mockup_error(estimated_pose, ground_truth_pose):
     Returns:
         error (float): Error between estimated and ground truth poses.
     """
+    # First, the poses are aligned
+    aligned_est_pose = horn_alignment(estimated_pose, ground_truth_pose)
+
+    # Then, the aligned estimated poses are used to compute the error in translation -> EPIPOLAR?
+    translation_error = compute_translation_error(
+        aligned_est_pose.translation, ground_truth_pose.translation
+    )
+
+    # Again, need to first extract the rotation Matrix
+    rotation_error = compute_rotation_error(
+        aligned_est_pose.rotation, ground_truth_pose.rotation
+    )
+
+    total_error = translation_error + rotation_error
 
     # Compute error between estimated and ground truth poses
-    error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1)
+    # error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1)
 
-    return error
+    # return error
+    return total_error
 
 
 def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output"):
