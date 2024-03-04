@@ -79,6 +79,7 @@ def compute_translation_error(
     """
     # Compute Euclidean distance between translations (estimated and ground truth)
     error = np.linalg.norm(estimated_translation - ground_truth_translation)
+    # error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1) -> scaling of error (logarithmically) for better representation (+1 for numerical stability)
     return error
 
 
