@@ -53,6 +53,7 @@ if MODE == "video":
     dist = np.array(data[1])
     if STEPS == -1:
         STEPS = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+    (max_x, min_x, max_z, min_z) = 300, -300, 300, -300
 if MODE == "kitti":
 
     kl = KittiLoader(do_images, do_poses, SEQUENCE)
@@ -61,6 +62,8 @@ if MODE == "kitti":
     kl.set_idx(0)
     if STEPS == -1:
         STEPS = kl.get_seqlen()
+    (max_x, min_x, max_z, min_z) = kl.get_extremes()
+
 
 # create Visual Odometry Agent
 odo = VOAgent(
@@ -74,7 +77,6 @@ odo = VOAgent(
 )
 
 # create and prepare maps
-(max_x, min_x, max_z, min_z) = kl.get_extremes()
 margin = 50
 max_x += margin
 min_x -= margin
@@ -89,7 +91,8 @@ origin = (-min_x, -min_z)
 # gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 track_map = np.full(map_size, 255, dtype=np.uint8)
 updated_gt_map = np.full(map_size, 255, dtype=np.uint8)
-track_map = draw_gt_map(track_map, origin, kl)
+if MODE == "kitti":
+    track_map = draw_gt_map(track_map, origin, kl)
 
 # initialize poses
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
@@ -108,6 +111,7 @@ for tqdm_idx in tqdm(range(STEPS)):
             ret, frame = cap.read()
             if not ret:
                 break
+        gt_pose = np.eye(3, 4, dtype=np.float64)
 
     if MODE == "kitti":
         for i in range(FRAMESKIP):
@@ -125,7 +129,7 @@ for tqdm_idx in tqdm(range(STEPS)):
     # if (tqdm_idx + 1) % 100000 == 0:
     #     breakpoint()
     # error evaluation
-
+    breakpoint()
     err = compute_mockup_error(agent_pose, gt_pose)
     errors.append(err)
 
