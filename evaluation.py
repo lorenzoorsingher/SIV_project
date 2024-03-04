@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from common import rotationMatrixToEulerAngles
-from VOAgent import epipolar_computation
 
 
 def compute_relative_pose_error(estimated_poses, ground_truth_poses):
