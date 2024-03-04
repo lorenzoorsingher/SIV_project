@@ -79,6 +79,7 @@ def compute_translation_error(
     """
     # Compute Euclidean distance between translations (estimated and ground truth)
     error = np.linalg.norm(estimated_translation - ground_truth_translation)
+    # error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1) -> scaling of error (logarithmically) for better representation (+1 for numerical stability)
     return error
 
 
@@ -141,11 +142,26 @@ def compute_mockup_error(estimated_pose, ground_truth_pose):
     Returns:
         error (float): Error between estimated and ground truth poses.
     """
+    # First, the poses are aligned
+    aligned_est_pose = horn_alignment(estimated_pose, ground_truth_pose)
+
+    # Then, the aligned estimated poses are used to compute the translation error
+    translation_error = compute_translation_error(
+        aligned_est_pose[:, -1], ground_truth_pose[:, -1]
+    )
+
+    # And the rotation error
+    rotation_error = compute_rotation_error(
+        aligned_est_pose[:, :3], ground_truth_pose[:, :3]
+    )
+
+    total_error = translation_error + rotation_error
 
     # Compute error between estimated and ground truth poses
-    error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1)
+    # error = np.log2(np.linalg.norm(estimated_pose - ground_truth_pose) + 1)
 
-    return error
+    # return error
+    return total_error
 
 
 def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output"):
