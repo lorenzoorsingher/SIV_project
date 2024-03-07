@@ -22,7 +22,7 @@ sequences = [0]
 
 steps = 30
 
-out_path = os.getcwd() + "/output/run_" + str(time.time())[:-8] + "/"
+out_path = os.getcwd() + "/output/run_" + str(time.time())[:-8]
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 

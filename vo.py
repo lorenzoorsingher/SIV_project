@@ -11,7 +11,7 @@ from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 from setup import get_args
-from evaluation import compute_mockup_error, save_metrics
+from evaluation import compute_mockup_error2, save_metrics
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 # get arguments
@@ -34,9 +34,9 @@ do_poses = args["kitti_poses"] + "/dataset/poses"
 
 ### THIS WILL BE REMOVED
 if out_path == "":
-    out_path = "/output/run_" + str(time.time())[:-8] + "/"
-    if not os.path.exists(os.getcwd() + out_path):
-        os.makedirs(os.getcwd() + out_path)
+    out_path = os.getcwd() + "/data/output/run_" + str(time.time())[:-8]
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
 ###
 
 
@@ -104,7 +104,7 @@ gt_poses = []
 errors = []
 
 abs_scale = 1
-for tqdm_idx in tqdm(range(STEPS)):
+for tqdm_idx in range(STEPS):
 
     if MODE == "video":
         for i in range(FRAMESKIP):
@@ -129,8 +129,7 @@ for tqdm_idx in tqdm(range(STEPS)):
     # if (tqdm_idx + 1) % 100000 == 0:
     #     breakpoint()
     # error evaluation
-    breakpoint()
-    err = compute_mockup_error(agent_pose, gt_pose)
+    err = compute_mockup_error2(agent_pose, gt_pose, old_agent_pose, old_gt_pose)
     errors.append(err)
 
     # err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
@@ -143,7 +142,7 @@ for tqdm_idx in tqdm(range(STEPS)):
     # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         color = (0, 200, 0)
-        # color = get_color(err, range=(0, 0.5))
+        color = get_color(err, range=(0, 1))
         # print("error: ", err)
         updated_track_map = update_map(agent_pose, track_map, origin, color)
         # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))

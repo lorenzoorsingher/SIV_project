@@ -177,7 +177,7 @@ def compute_mockup_error(estimated_pose, ground_truth_pose):
         "translation error: ",
         translation_error.round(2),
         " rotation error: ",
-        rotation_error.round(2),
+        (rotation_error * 180 / np.pi).round(2),
     )
     total_error = translation_error + rotation_error
 
@@ -186,6 +186,30 @@ def compute_mockup_error(estimated_pose, ground_truth_pose):
 
     # return error
     return total_error
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
+
+    delta_t_est = est_pose[:3, 3] - old_est_pose[:3, 3]
+    delta_t_gt = gt_pose[:3, 3] - old_gt_pose[:3, 3]
+
+    delta_R_est = np.matmul(est_pose[:3, :3], old_est_pose[:3, :3].T)
+    delta_R_gt = gt_pose[:3, :3] @ old_gt_pose[:3, :3].T
+
+    # delta_R_est_deg = rotationMatrixToEulerAngles(delta_R_est)[1] * 180 / np.pi
+    # delta_R_gt_deg = rotationMatrixToEulerAngles(delta_R_gt)[1] * 180 / np.pi
+
+    err_rot = delta_R_est @ delta_R_gt.T
+    err_rot_deg = rotationMatrixToEulerAngles(err_rot)[1] * 180 / np.pi
+    err_rot_deg = (sigmoid(abs(err_rot_deg)) - 0.5) * 2
+    print("#" * int(err_rot_deg * 10 + 1))
+    # breakpoint()
+    total_erro = err_rot_deg
+    return total_erro
 
 
 def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output"):
@@ -202,7 +226,6 @@ def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output
     gt_dump = output_path + "/gt.json"
     err_dump = output_path + "/err.json"
     settings_path = output_path + "/settings.json"
-
     flattend = [np.array(pos).flatten().tolist() for pos in est_poses]
     with open(est_dump, "w", encoding="utf-8") as f:
         json.dump(flattend, f, ensure_ascii=False, indent=4)
