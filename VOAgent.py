@@ -1,9 +1,14 @@
+import pdb
 import numpy as np
 import math
 import cv2 as cv
 
 from common import *
 from position import Position
+
+import warnings
+
+warnings.filterwarnings("error")
 
 
 class VOAgent:
@@ -249,12 +254,18 @@ class VOAgent:
 
         # TODO verify correctness of relative scale
         # Form point pairs and calculate the relative scale
+        if 0 in np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1):
+            relative_scale = 1
+        else:
+            try:
+                relative_scale = np.nanmean(
+                    np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
+                    / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
+                )
+            except RuntimeWarning:
+                # breakpoint()
+                pass
 
-        relative_scale = np.nanmean(
-            np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
-            / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
-        )
-        # print(relative_scale)
         if math.isnan(relative_scale):
             relative_scale = 1
 
