@@ -60,6 +60,10 @@ class VOAgent:
         ----------
         lastFrame (ndarray): frame to be processed
         abs_scale (float): absolute scale if provided from ground truth
+
+        Returns
+        -------
+        ndarray: The updated agent world position
         """
 
         # fill frames buffer

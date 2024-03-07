@@ -155,6 +155,30 @@ def compute_mockup_error(estimated_pose, ground_truth_pose):
         aligned_est_pose[:, :3], ground_truth_pose[:, :3]
     )
 
+    align_rot = (
+        rotationMatrixToEulerAngles(aligned_est_pose[:, :3])[1] * 180 / np.pi
+    ).round(2)
+    gt_rot = (
+        rotationMatrixToEulerAngles(ground_truth_pose[:, :3])[1] * 180 / np.pi
+    ).round(2)
+    est_rot = (
+        rotationMatrixToEulerAngles(estimated_pose[:, :3])[1] * 180 / np.pi
+    ).round(2)
+
+    print(
+        "al: ",
+        align_rot,
+        "\tgt: ",
+        gt_rot,
+        "\test: ",
+        est_rot,
+    )
+    print(
+        "translation error: ",
+        translation_error.round(2),
+        " rotation error: ",
+        rotation_error.round(2),
+    )
     total_error = translation_error + rotation_error
 
     # Compute error between estimated and ground truth poses

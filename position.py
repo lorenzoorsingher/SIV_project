@@ -26,6 +26,10 @@ class Position:
         R (ndarray): Rotation matrix
         t (ndarray): Translation vector
         bad_data (bool): flag to indicate if the data is bad
+
+        Returns
+        -------
+        ndarray: The updated agent world position
         """
 
         # Check if the data is bad. If data is bad
