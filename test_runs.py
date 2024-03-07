@@ -22,16 +22,31 @@ sequences = [0]
 
 steps = 30
 
-out_path = os.getcwd() + "/output/run_" + str(time.time())[:-8]
+out_path = os.getcwd() + "/data/output/run_" + str(time.time())[:-8]
 if not os.path.exists(out_path):
     os.makedirs(out_path)
+
+##########
+
+feature_matchers = [
+    ("ORB_BF", 0),
+    ("SIFT_FLANN_LOWE", 5),
+]
+scales = [0.5, 1]
+
+denoise = [0]
+
+sequences = [0]
+
+steps = 200
+##########
 
 index = 0
 for sequence in sequences:
     for scale in scales:
         for denoise_val in denoise:
             for fm, idx in feature_matchers:
-                eval_path = out_path + "eval_" + str(index)
+                eval_path = out_path + "/eval_" + str(index)
                 if not os.path.exists(eval_path):
                     os.makedirs(eval_path)
                 index += 1

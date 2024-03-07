@@ -205,10 +205,23 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
 
     err_rot = delta_R_est @ delta_R_gt.T
     err_rot_deg = rotationMatrixToEulerAngles(err_rot)[1] * 180 / np.pi
-    err_rot_deg = (sigmoid(abs(err_rot_deg)) - 0.5) * 2
-    print("#" * int(err_rot_deg * 10 + 1))
+    err_rot_deg = sigmoid(abs(err_rot_deg)) - 0.5
+
+    diff_rot = gt_pose[:3, :3] @ est_pose[:3, :3].T
+    diff_rot_deg = rotationMatrixToEulerAngles(diff_rot)[1] * 180 / np.pi
+
+    delta_t_est_rot = diff_rot @ delta_t_est
+    # print("#" * int(err_rot_deg * 10 + 1))
+    # print("diff_rot:", diff_rot_deg.round(2))
+    err_trasl = sigmoid(abs(np.linalg.norm(delta_t_gt - delta_t_est_rot)) - 0.5)
+
+    # err_trans_2 = np.linalg.norm(delta_t_gt - delta_t_est)
+    # print(err_trans.round(2), " \t", "#" * int(err_trans * 10 + 1))
+    # print(err_trans_2.round(2), " \t", "&" * int(err_trans_2 * 10 + 1))
+    # print("")
     # breakpoint()
-    total_erro = err_rot_deg
+    # print(err_rot_deg.round(2) + err_trasl.round(2))
+    total_erro = err_rot_deg + err_trasl
     return total_erro
 
 
