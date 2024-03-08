@@ -37,7 +37,7 @@ class VOAgent:
         buf_size (int): Frames buffer size
         matcher_method (int): Feature matching method
         scale_factor (float): Scale factor for images
-        denoise (int): Amount of blur to apply to the images
+        denoise (int): Amount of blur to apply to the images (should be positive and odd)
         debug (bool): Flag to enable image debugging
         """
         self.frame_buffer = []
