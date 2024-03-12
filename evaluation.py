@@ -194,11 +194,17 @@ def sigmoid(x):
 
 def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
 
-    delta_t_est = est_pose[:3, 3] - old_est_pose[:3, 3]
-    delta_t_gt = gt_pose[:3, 3] - old_gt_pose[:3, 3]
+    # extraction of translation vectors -> commenting first two lines jsut to be sure of the sintax
+    # delta_t_est = est_pose[:3, 3] - old_est_pose[:3, 3]  # estimated travelled distance
+    # delta_t_gt = gt_pose[:3, 3] - old_gt_pose[:3, 3]  # ground truth travelled distance
+    delta_t_est = est_pose[:, -1] - old_est_pose[:, -1]  # distanza percorsa stimata
+    delta_t_gt = gt_pose[:, -1] - old_gt_pose[:, -1]  # distanza percorsa ground truth
+    # okay no, it's the same thing, just a different sintax :)
 
-    delta_R_est = np.matmul(est_pose[:3, :3], old_est_pose[:3, :3].T)
-    delta_R_gt = gt_pose[:3, :3] @ old_gt_pose[:3, :3].T
+    delta_R_est = np.matmul(
+        est_pose[:3, :3], old_est_pose[:3, :3].T
+    )  # estimated rotation
+    delta_R_gt = gt_pose[:3, :3] @ old_gt_pose[:3, :3].T  # GT rotation
 
     # delta_R_est_deg = rotationMatrixToEulerAngles(delta_R_est)[1] * 180 / np.pi
     # delta_R_gt_deg = rotationMatrixToEulerAngles(delta_R_gt)[1] * 180 / np.pi
@@ -210,10 +216,28 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     diff_rot = gt_pose[:3, :3] @ est_pose[:3, :3].T
     diff_rot_deg = rotationMatrixToEulerAngles(diff_rot)[1] * 180 / np.pi
 
-    delta_t_est_rot = diff_rot @ delta_t_est
+    ### delta_t_est_rot = diff_rot @ delta_t_est # -> originale, ma ho il sospetto che diff_rot stoni logicamente
+    delta_t_est_rot = (
+        err_rot @ delta_t_est
+    )  # in questo modo dovremmo star direzionando la camera del vettore direzione stimato nella dir della camera GT
     # print("#" * int(err_rot_deg * 10 + 1))
     # print("diff_rot:", diff_rot_deg.round(2))
-    err_trasl = sigmoid(abs(np.linalg.norm(delta_t_gt - delta_t_est_rot)) - 0.5)
+    # err_trasl = sigmoid(abs(np.linalg.norm(delta_t_gt - delta_t_est_rot)) - 0.5) -> lei è quella originale
+
+    err_trasl = np.linalg.norm(
+        delta_t_gt - delta_t_est_rot
+    )  # in questo caso stiamo prendendo in considerazione il vettore distanza stimato allineato nella direzione del vettore transl. gt
+    err_trasl_noAlign = np.linalg.norm(
+        delta_t_gt - delta_t_est
+    )  # proviamo a fare la differenza senza riallineamento, perché sono solo vettori distanza, quindi rappresentano la distanza percorsa, che dovrebbe essere relativa e non globale, hence no need for alignment
+
+    # print("translation error with alignement:", (err_trasl).round(4))
+    # print("translation error:", (err_trasl_noAlign).round(4))
+
+    print("ROTATION ERROR:", diff_rot_deg)
+    print("difference among errors:", (err_trasl - err_trasl_noAlign).round(4))
+    print("gt distance travelled:", (delta_t_gt).round(4))
+    print("estimated distance travelled:", (delta_t_est).round(4))
 
     # err_trans_2 = np.linalg.norm(delta_t_gt - delta_t_est)
     # print(err_trans.round(2), " \t", "#" * int(err_trans * 10 + 1))
@@ -221,7 +245,11 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     # print("")
     # breakpoint()
     # print(err_rot_deg.round(2) + err_trasl.round(2))
+
     total_erro = err_rot_deg + err_trasl
+    # total_erro_NA = err_rot_deg + err_trasl_noAlign
+    print("error with alignment:", err_trasl)
+    print("error NO alignment:", err_trasl_noAlign)
     return total_erro
 
 
