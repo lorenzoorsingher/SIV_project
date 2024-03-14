@@ -44,16 +44,16 @@ class VOAgent:
         self.position = Position()
 
         # DEBUGGING - rotation of matrix to test translation error
-        # theta = np.radians(45)
-        # R_z = np.array(
-        #     [
-        #         [np.cos(theta), -np.sin(theta), 0],
-        #         [np.sin(theta), np.cos(theta), 0],
-        #         [0, 0, 1],
-        #     ]
-        # )
-        # new_R = np.dot(R_z, mtx)
-        # mtx = new_R
+        theta = np.radians(45)
+        R_z = np.array(
+            [
+                [np.cos(theta), -np.sin(theta), 0],
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1],
+            ]
+        )
+        new_R = np.dot(R_z, mtx)
+        mtx = new_R
         #
         tmp_mtx = mtx * scale_factor
         tmp_mtx[-1][-1] = 1.0
