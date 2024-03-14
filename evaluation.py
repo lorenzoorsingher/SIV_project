@@ -216,7 +216,9 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     diff_rot = gt_pose[:3, :3] @ est_pose[:3, :3].T
     diff_rot_deg = rotationMatrixToEulerAngles(diff_rot)[1] * 180 / np.pi
 
-    ### delta_t_est_rot = diff_rot @ delta_t_est # -> originale, ma ho il sospetto che diff_rot stoni logicamente
+    # delta_t_est_rot = (
+    #     diff_rot @ delta_t_est
+    # )  # -> originale, ma ho il sospetto che diff_rot stoni logicamente
     delta_t_est_rot = (
         err_rot @ delta_t_est
     )  # in questo modo dovremmo star direzionando la camera del vettore direzione stimato nella dir della camera GT
@@ -235,7 +237,7 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     # print("translation error:", (err_trasl_noAlign).round(4))
 
     print("ROTATION ERROR:", diff_rot_deg)
-    print("difference among errors:", (err_trasl - err_trasl_noAlign).round(4))
+    print("difference among errors:", abs((err_trasl - err_trasl_noAlign).round(4)))
     print("gt distance travelled:", (delta_t_gt).round(4))
     print("estimated distance travelled:", (delta_t_est).round(4))
 
