@@ -14,6 +14,16 @@ class Position:
 
         self.world_pose = np.eye(4, 4)
         self.cumul_R = np.eye(3, 3, dtype=np.float64)
+        theta = np.radians(45)
+        R_z = np.array(
+            [
+                [np.cos(theta), -np.sin(theta), 0],
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1],
+            ]
+        )
+        new_R = np.dot(R_z, self.cumul_R)
+        self.cumul_R = new_R
         self.cumul_t = np.array([0, 0, 0], dtype=np.float64)
         self.lastgoodpose = np.eye(4, 4)
 
