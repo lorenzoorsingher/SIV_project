@@ -43,18 +43,6 @@ class VOAgent:
         self.frame_buffer = []
         self.position = Position()
 
-        # DEBUGGING - rotation of matrix to test translation error
-        theta = np.radians(45)
-        R_z = np.array(
-            [
-                [np.cos(theta), -np.sin(theta), 0],
-                [np.sin(theta), np.cos(theta), 0],
-                [0, 0, 1],
-            ]
-        )
-        new_R = np.dot(R_z, mtx)
-        mtx = new_R
-        #
         tmp_mtx = mtx * scale_factor
         tmp_mtx[-1][-1] = 1.0
         self.mtx = tmp_mtx
@@ -162,7 +150,7 @@ class VOAgent:
                 method=cv.RANSAC,
             )
 
-            # TODO: pick best solution
+            # TODO: pick better solution
             # _, R, t, mask = cv.recoverPose(E, pFrame1, pFrame2)
             # t = t[:, 0]
             R, t = self.decomp_essential_mat(
