@@ -118,7 +118,7 @@ for tqdm_idx in tqdm(range(STEPS)):
             frame, gt_pose = kl.next_frame()
         # updated_gt_map = update_map(gt_pose, gt_map)
         # compute absolute scale from ground truth
-        # abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
+        abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
 
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
