@@ -32,7 +32,7 @@ feature_matchers = [
     ("ORB_BF", 0),
     ("SIFT_FLANN_LOWE", 5),
 ]
-scales = [0.5, 1]
+scales = [0.5, 0.25]
 
 denoise = [0]
 
