@@ -208,7 +208,7 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     # delta_R_gt_deg = rotationMatrixToEulerAngles(delta_R_gt)[1] * 180 / np.pi
 
     err_rot = delta_R_est @ delta_R_gt.T
-    err_rot_deg = rotationMatrixToEulerAngles(err_rot)[1] * 180 / np.pi
+    err_rot_deg = abs(rotationMatrixToEulerAngles(err_rot)[1] * 180 / np.pi)
 
     diff_rot = gt_pose[:3, :3] @ est_pose[:3, :3].T
     diff_rot_deg = rotationMatrixToEulerAngles(diff_rot)[1] * 180 / np.pi
@@ -226,21 +226,29 @@ def compute_mockup_error2(est_pose, gt_pose, old_est_pose, old_gt_pose):
     # print("translation error with alignement:", (err_trasl).round(4))
     # print("translation error:", (err_trasl_no_align).round(4))
 
-    print("-" * 40)
-    print("accumulated rotation err: \t", diff_rot_deg)
-    print("instant rotation err: \t", err_rot_deg)
-    print("difference among errors: \t", abs((err_trasl - err_trasl_no_align).round(4)))
-    print("gt distance travelled: \t", (delta_t_gt).round(4))
-    print("est distance travelled: \t", (delta_t_est).round(4))
+    # print("-" * 40)
+    # print("accumulated rotation err: \t", diff_rot_deg)
+    # print("instant rotation err: \t", err_rot_deg)
+    # print("difference among errors: \t", abs((err_trasl - err_trasl_no_align).round(4)))
+    # print("gt distance travelled: \t", (delta_t_gt).round(4))
+    # print("est distance travelled: \t", (delta_t_est).round(4))
 
     total_err = err_rot_deg + err_trasl
+    total_err = total_err / (1 / 2 + total_err)
     # total_err_NA = err_rot_deg + err_trasl_noAlign
-    print("error with alignment: \t", err_trasl)
-    print("error NO alignment: \t", err_trasl_no_align)
+    # print("error with alignment: \t", err_trasl)
+    # print("error NO alignment: \t", err_trasl_no_align)
 
-    print("gt distance length: \t", np.linalg.norm(delta_t_gt).round(4))
-    print("est distance length: \t", np.linalg.norm(delta_t_est).round(4))
-    print("est_al distance length: \t", np.linalg.norm(delta_t_est_rot).round(4))
+    # print("gt distance length: \t", np.linalg.norm(delta_t_gt).round(4))
+    # print("est distance length: \t", np.linalg.norm(delta_t_est).round(4))
+    # print("est_al distance length: \t", np.linalg.norm(delta_t_est_rot).round(4))
+
+    # print("")
+    # print("erro rot: \t", err_rot_deg)
+    # print("erro trasl: \t", err_trasl)
+
+    # print("\ntot err: \t", total_err)
+
     return total_err
 
 
@@ -274,8 +282,11 @@ def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output
 
     with open(settings_path, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=4)
+
     fig, ax = plt.subplots()
     ax.plot(errors)
+
+    ax.set_ylim([0, 1])  # Fix y-axis to 1
     plt.savefig(output_path + "/error.png", bbox_inches="tight")
 
     print("Metrics saved to", output_path)
