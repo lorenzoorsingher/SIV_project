@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 from common import *
 
-path = "/home/lollo/Documents/python/siv/SIV_project/data/output/"
+path = "/Users/ilariarocchi/Desktop/Signal_Image_Video/LAB/SIV_project/data/output/"
+# path = "/home/lollo/Documents/python/siv/SIV_project/data/output/"
 dirs = [path + d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 dirs.sort()
 latest = dirs[-1]
@@ -30,11 +31,14 @@ for dir in dirs:
 
     # breakpoint()
     name = (
-        FM[int(settings["feat_match"])]
-        + "_"
+        "error with "
+        + FM[int(settings["feat_match"])]
+        + "_ScaleFactor:"
         + str(settings["scale_factor"])
-        + "_"
+        + "_Denoise:"
         + str(settings["denoise"])
+        # + "_Sequence:"
+        # + str(settings["sequence"])
     )
-    results[name] = np.average(error)
+    [name] = np.average(error)
 breakpoint()
