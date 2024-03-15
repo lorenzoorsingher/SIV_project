@@ -30,6 +30,10 @@ if not os.path.exists(out_path):
 
 feature_matchers = [
     ("ORB_BF", 0),
+    ("ORB_FLANN", 1),
+    ("SIFT_FLANN", 2),
+    ("SIFT_KNN", 3),
+    ("ORB_KNN", 4),
     ("SIFT_FLANN_LOWE", 5),
 ]
 scales = [0.5, 0.25]
