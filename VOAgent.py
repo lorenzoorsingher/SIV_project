@@ -254,17 +254,15 @@ class VOAgent:
 
         # TODO verify correctness of relative scale
         # Form point pairs and calculate the relative scale
-        if 0 in np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1):
+
+        try:
+            relative_scale = np.nanmean(
+                np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
+                / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
+            )
+        except RuntimeWarning:
             relative_scale = 1
-        else:
-            try:
-                relative_scale = np.nanmean(
-                    np.linalg.norm(uhom_Q1.T[:-1] - uhom_Q1.T[1:], axis=-1)
-                    / np.linalg.norm(uhom_Q2.T[:-1] - uhom_Q2.T[1:], axis=-1)
-                )
-            except RuntimeWarning:
-                # breakpoint()
-                pass
+            pass
 
         if math.isnan(relative_scale):
             relative_scale = 1
@@ -427,7 +425,7 @@ class VOAgent:
         return pFrame1, pFrame2
 
     def ORB_BF(self, img1, img2):
-        orb = cv.ORB_create(nfeatures=3000, scoreType=cv.ORB_FAST_SCORE)
+        orb = cv.ORB_create(nfeatures=6000, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
@@ -467,7 +465,7 @@ class VOAgent:
 
     def ORB_FLANN(self, img1, img2):
         # Initiate ORB detector
-        orb = cv.ORB_create(nfeatures=3000, scoreType=cv.ORB_FAST_SCORE)
+        orb = cv.ORB_create(nfeatures=6000, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
@@ -475,12 +473,12 @@ class VOAgent:
 
         index_params = dict(
             algorithm=FLANN_INDEX_LSH,
-            table_number=12,  # was 12
-            key_size=17,  # was 20
-            multi_probe_level=2,
+            table_number=6,  # was 12
+            key_size=12,  # was 20
+            multi_probe_level=1,
         )  # was 2
 
-        search_params = dict(checks=50)
+        search_params = dict(checks=32)
 
         flann = cv.FlannBasedMatcher(index_params, search_params)
 

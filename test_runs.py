@@ -30,19 +30,14 @@ if not os.path.exists(out_path):
 
 feature_matchers = [
     ("ORB_BF", 0),
-    ("ORB_FLANN", 1),
-    ("SIFT_FLANN", 2),
-    ("SIFT_KNN", 3),
-    ("ORB_KNN", 4),
-    ("SIFT_FLANN_LOWE", 5),
 ]
-scales = [0.5, 0.25]
+scales = [1]
 
-denoise = [0]
+denoise = [3, 5, 7]
 
 sequences = [0]
 
-steps = 200
+steps = 400
 ##########
 
 index = 0

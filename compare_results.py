@@ -97,15 +97,16 @@ for dir in dirs:
 
 
 final = []
-for key, settings in aggregate.items():
+for key, value in aggregate.items():
 
-    aggregate[key]["average_error"] = np.average(settings["errors"])
+    aggregate[key]["average_error"] = np.average(value["errors"])
     print(key, " ", aggregate[key]["average_error"].round(3))
     final.append([key, aggregate[key]["average_error"]])
 
 sorted = sorted(final, key=lambda x: x[1])
 tops = [x[0] for x in sorted]
-seqid = 0
+
+seqid = 8
 
 all_poses = []
 for dir in dirs:
