@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 from common import rotationMatrixToEulerAngles
 
@@ -285,6 +286,20 @@ def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output
 
     fig, ax = plt.subplots()
     ax.plot(errors)
+
+    # smoothing the graph using cubic interpolation:
+    x = np.arange(len(errors))
+    y = np.array(errors)
+
+    cubic_interpolation_model = interp1d(x, y, kind="cubic")  # needs scipy
+
+    new_x = np.linspace(x[0], x[-1], 10 * len(x))
+
+    smoothed_errors = cubic_interpolation_model(new_x)
+
+    fig, ax = plt.subplots()
+    ax.plot(new_x, smoothed_errors, color="red", label="Smoothed (Cubic Interpolation)")
+    ###
 
     ax.set_ylim([0, 1])  # Fix y-axis to 1
     plt.savefig(output_path + "/error.png", bbox_inches="tight")
