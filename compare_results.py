@@ -143,6 +143,7 @@ for key, value in aggregate.items():
     final.append(
         [
             key,
+            key.split("_")[0],
             key.split("_")[-3],
             key.split("_")[-2],
             key.split("_")[-1],
@@ -153,7 +154,7 @@ for key, value in aggregate.items():
         ]
     )
 
-sorted = sorted(final, key=lambda x: x[4])
+sorted = sorted(final, key=lambda x: x[5])
 tops = [x[0] for x in sorted]
 
 for s in sorted:
@@ -186,6 +187,7 @@ with open(fullpath + "output.csv", "w", newline="") as file:
     # Define column names
     column_names = [
         "name",
+        "fm",
         "nfeat",
         "scale",
         "denoise",

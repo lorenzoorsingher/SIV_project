@@ -19,13 +19,13 @@ feature_matchers = [
     ORB_FLANN,
     SIFT_FLANN,
 ]
-scales = [1]
+scales = [0.5]
 
 denoise = [0]
 
-sequences = [0, 3, 8]
+sequences = [0]
 
-nfeatures = [10, 100, 500, 3000, 6000]
+nfeatures = [10, 100, 500, 3000, 6000, 10000]
 
 steps = 300
 
