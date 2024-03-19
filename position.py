@@ -40,9 +40,11 @@ class Position:
             heading = rotationMatrixToEulerAngles(R) * 180 / np.pi
 
             # TODO: there must be a better wahy to do this
-            if abs(heading[1]) >= 10:
+            if abs(heading[1]) >= 4:
                 bad_data = True
-
+            #     print("X" * int(heading[1]))
+            # else:
+            #     print("#" * int(heading[1]))
         if bad_data:
             R = self.lastgoodpose[:3, :3]
             t = self.lastgoodpose[:3, 3]
