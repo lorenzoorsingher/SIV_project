@@ -7,3 +7,5 @@ output/*
 
 !data/data_odometry_poses/
 !images/*
+
+sivenv/
