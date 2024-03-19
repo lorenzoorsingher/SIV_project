@@ -114,6 +114,8 @@ for dir in dirs:
     name = (
         FM[int(settings["feat_match"])]
         + "_"
+        + str(settings["num_feat"])
+        + "_"
         + str(settings["scale_factor"])
         + "_"
         + str(settings["denoise"])
@@ -121,12 +123,14 @@ for dir in dirs:
 
     if name not in aggregate:
         aggregate[name] = {"errors": [], "sequences": []}
+        aggregate[name]["steps_sec"] = []
 
     if settings["sequence"] not in aggregate[name]["sequences"]:
         aggregate[name]["sequences"].append(settings["sequence"])
 
         error = json.load(open(dir + "/err.json"))
         aggregate[name]["errors"] += error
+        aggregate[name]["steps_sec"] += [settings["steps_sec"]]
 
 
 final = []
@@ -134,24 +138,27 @@ for key, value in aggregate.items():
     aggregate[key]["error_avg"] = np.average(value["errors"])
     aggregate[key]["error_std"] = np.std(value["errors"])
     aggregate[key]["error_max"] = np.max(value["errors"])
+    aggregate[key]["steps_sec"] = np.average(value["steps_sec"])
 
     final.append(
         [
             key,
+            key.split("_")[-3],
             key.split("_")[-2],
             key.split("_")[-1],
             aggregate[key]["error_avg"],
             aggregate[key]["error_std"],
             aggregate[key]["error_max"],
+            aggregate[key]["steps_sec"],
         ]
     )
 
-sorted = sorted(final, key=lambda x: x[3])
+sorted = sorted(final, key=lambda x: x[4])
 tops = [x[0] for x in sorted]
 
 for s in sorted:
-    print(s[:4])
-seqid = 8
+    print(s)
+seqid = 0
 
 all_poses = []
 for dir in dirs:
@@ -160,34 +167,38 @@ for dir in dirs:
     name = (
         FM[int(settings["feat_match"])]
         + "_"
+        + str(settings["num_feat"])
+        + "_"
         + str(settings["scale_factor"])
         + "_"
         + str(settings["denoise"])
     )
+
     if name in tops[:3]:
         if settings["sequence"] == seqid:
             if len(all_poses) == 0:
                 all_poses.append(json.load(open(dir + "/gt.json")))
             all_poses.append(json.load(open(dir + "/est.json")))
 
-
-with open(fullpath + "/output.csv", "w", newline="") as file:
+with open(fullpath + "output.csv", "w", newline="") as file:
+    print(fullpath + "output.csv")
     writer = csv.writer(file)
     # Define column names
     column_names = [
         "name",
+        "nfeat",
         "scale",
         "denoise",
         "err_avg",
         "err_std",
         "err_max",
+        "steps_sec",
     ]  # Replace with your actual column names
     # Write column names as the first row
     writer.writerow(column_names)
     # Write each list in 'final' as a row in the CSV
     for row in final:
         writer.writerow(row)
-
 map = draw_maps(all_poses)
 
 

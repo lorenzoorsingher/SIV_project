@@ -93,9 +93,9 @@ def save_metrics(
     with open(err_dump, "w", encoding="utf-8") as f:
         json.dump(errors, f, ensure_ascii=False, indent=4)
 
-    settings["avg_error"] = str(np.mean(errors).round(3))
-    settings["max_error"] = str(np.max(errors).round(3))
-    settings["steps_sec"] = str(steps_sec)
+    settings["avg_error"] = np.mean(errors).round(3)
+    settings["max_error"] = np.max(errors).round(3)
+    settings["steps_sec"] = steps_sec
 
     with open(settings_path, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=4)
