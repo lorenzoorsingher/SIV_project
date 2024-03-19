@@ -66,7 +66,9 @@ def compute_error(est_pose, gt_pose, old_est_pose, old_gt_pose):
     return total_err
 
 
-def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output"):
+def save_metrics(
+    est_poses, gt_poses, errors, settings, output_path="data/output", steps_sec=0
+):
     """
     Saves metrics (estimated poses, ground truth poses, and errors) to a file.
 
@@ -93,6 +95,7 @@ def save_metrics(est_poses, gt_poses, errors, settings, output_path="data/output
 
     settings["avg_error"] = str(np.mean(errors).round(3))
     settings["max_error"] = str(np.max(errors).round(3))
+    settings["steps_sec"] = str(steps_sec)
 
     with open(settings_path, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=4)

@@ -23,6 +23,7 @@ class VOAgent:
         dist,
         buf_size=1,
         matcher_method=SIFT_KNN,
+        num_feat=500,
         scale_factor=1,
         denoise=0,
         debug=True,
@@ -51,6 +52,7 @@ class VOAgent:
 
         self.scale_factor = scale_factor
         self.matcher_method = matcher_method
+        self.num_feat = num_feat
         self.buf_size = buf_size
         self.denoise = denoise
 
@@ -273,7 +275,7 @@ class VOAgent:
 
     def SIFT_KNN(self, img1, img2):
         # Initiate SIFT detector
-        sift = cv.SIFT_create()
+        sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
@@ -310,7 +312,7 @@ class VOAgent:
 
     def SIFT_FLANN_LOWE(self, img1, img2):
         # Initiate SIFT detector
-        sift = cv.SIFT_create()
+        sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
@@ -345,7 +347,7 @@ class VOAgent:
 
     def SIFT_FLANN(self, img1, img2):
         # Initiate SIFT detector
-        sift = cv.SIFT_create()
+        sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
@@ -383,7 +385,7 @@ class VOAgent:
         return pFrame1, pFrame2
 
     def ORB_KNN(self, img1, img2):
-        orb = cv.ORB_create()
+        orb = cv.ORB_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
@@ -425,7 +427,7 @@ class VOAgent:
         return pFrame1, pFrame2
 
     def ORB_BF(self, img1, img2):
-        orb = cv.ORB_create(nfeatures=6000, scoreType=cv.ORB_FAST_SCORE)
+        orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)
@@ -465,7 +467,7 @@ class VOAgent:
 
     def ORB_FLANN(self, img1, img2):
         # Initiate ORB detector
-        orb = cv.ORB_create(nfeatures=6000, scoreType=cv.ORB_FAST_SCORE)
+        orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp1, des1 = orb.detectAndCompute(img1, None)
         kp2, des2 = orb.detectAndCompute(img2, None)

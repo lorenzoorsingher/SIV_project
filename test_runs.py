@@ -33,11 +33,11 @@ feature_matchers = [
 ]
 scales = [1]
 
-denoise = [3, 5, 7]
+denoise = [0]
 
 sequences = [0]
 
-steps = 400
+steps = 200
 ##########
 
 index = 0

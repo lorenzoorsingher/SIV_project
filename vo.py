@@ -25,6 +25,8 @@ STEPS = args["steps"]
 FEAT_MATCHER = args["feat_match"]
 SCALE = args["scale_factor"]
 DENOISE = args["denoise"]
+NFEAT = args["num_feat"]
+
 
 out_path = args["output"]
 calib_path = args["calib_path"]
@@ -71,6 +73,7 @@ odo = VOAgent(
     dist,
     buf_size=1,
     matcher_method=FEAT_MATCHER,
+    num_feat=NFEAT,
     scale_factor=SCALE,
     denoise=DENOISE,
     debug=DEBUG,
@@ -104,6 +107,9 @@ gt_poses = []
 errors = []
 
 abs_scale = 1
+
+start_time = time.time()
+
 for tqdm_idx in tqdm(range(STEPS)):
 
     if MODE == "video":
@@ -150,6 +156,17 @@ for tqdm_idx in tqdm(range(STEPS)):
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
 
+run_time = time.time() - start_time
+
+steps_sec = STEPS / run_time
+
 # only runs if output path is set
 if out_path != "":
-    save_metrics(est_poses, gt_poses, errors, settings=args, output_path=out_path)
+    save_metrics(
+        est_poses,
+        gt_poses,
+        errors,
+        settings=args,
+        output_path=out_path,
+        steps_sec=steps_sec,
+    )

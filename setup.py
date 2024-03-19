@@ -73,6 +73,15 @@ def get_args():
     )
 
     parser.add_argument(
+        "-nf",
+        "--num-feat",
+        type=int,
+        help="Set the number of features to detect in each frame. [video mode]",
+        default=500,
+        metavar="",
+    )
+
+    parser.add_argument(
         "-cp",
         "--calib-path",
         type=str,
