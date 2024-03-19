@@ -6,73 +6,69 @@ import shutil
 import sys
 import time
 
-feature_matchers = [
-    ("ORB_BF", 0),
-    ("ORB_FLANN", 1),
-    ("SIFT_FLANN", 2),
-    ("SIFT_KNN", 3),
-    ("ORB_KNN", 4),
-    ("SIFT_FLANN_LOWE", 5),
-]
-scales = [0.25, 0.5, 1]
+from common import *
 
-denoise = [0]
-
-sequences = [0]
-
-steps = 30
 
 out_path = os.getcwd() + "/data/output/run_" + str(time.time())[:-8]
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 
-##########
+########## SETTINGS SETUP
 
 feature_matchers = [
-    ("ORB_BF", 0),
+    ORB_FLANN,
+    SIFT_FLANN,
 ]
 scales = [1]
 
 denoise = [0]
 
-sequences = [0]
+sequences = [0, 3, 8]
 
-steps = 200
+nfeatures = [10, 100, 500, 3000, 6000]
+
+steps = 300
+
 ##########
 
 index = 0
 for sequence in sequences:
     for scale in scales:
         for denoise_val in denoise:
-            for fm, idx in feature_matchers:
-                eval_path = out_path + "/eval_" + str(index)
-                if not os.path.exists(eval_path):
-                    os.makedirs(eval_path)
-                index += 1
-                print("\n\n----------------------------------------------")
-                print(
-                    "Running sequence",
-                    sequence,
-                    " with scale: ",
-                    scale,
-                    " denoising: ",
-                    denoise_val,
-                    " feature matcher: ",
-                    fm,
-                )
-                os.system(
-                    sys.executable
-                    + " vo.py -st "
-                    + str(steps)
-                    + " -s "
-                    + str(sequence)
-                    + " -o "
-                    + eval_path
-                    + " -sf "
-                    + str(scale)
-                    + " -fm "
-                    + str(idx)
-                    + " -de "
-                    + str(denoise_val)
-                    + " -nd"
-                )
+            for nfeat in nfeatures:
+                for fm in feature_matchers:
+                    eval_path = out_path + "/eval_" + str(index)
+                    if not os.path.exists(eval_path):
+                        os.makedirs(eval_path)
+                    index += 1
+                    print("\n\n----------------------------------------------")
+                    print(
+                        "Running sequence",
+                        sequence,
+                        " with scale: ",
+                        scale,
+                        " denoising: ",
+                        denoise_val,
+                        " feature matcher: ",
+                        FM[fm],
+                        " @ ",
+                        nfeat,
+                    )
+                    os.system(
+                        sys.executable
+                        + " vo.py -st "
+                        + str(steps)
+                        + " -s "
+                        + str(sequence)
+                        + " -o "
+                        + eval_path
+                        + " -sf "
+                        + str(scale)
+                        + " -fm "
+                        + str(fm)
+                        + " -nf "
+                        + str(nfeat)
+                        + " -de "
+                        + str(denoise_val)
+                        + " -nd"
+                    )
