@@ -11,7 +11,7 @@ from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 from setup import get_args
-from evaluation import compute_mockup_error2, save_metrics
+from evaluation import compute_error, save_metrics
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 # get arguments
@@ -129,7 +129,7 @@ for tqdm_idx in tqdm(range(STEPS)):
     # if (tqdm_idx + 1) % 100000 == 0:
     #     breakpoint()
     # error evaluation
-    err = compute_mockup_error2(agent_pose, gt_pose, old_agent_pose, old_gt_pose)
+    err = compute_error(agent_pose, gt_pose, old_agent_pose, old_gt_pose)
     errors.append(err)
 
     # err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
