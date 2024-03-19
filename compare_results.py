@@ -1,22 +1,50 @@
 import os
 import sys
 import json
+import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
 from common import *
+import argparse
+
+
+parser = argparse.ArgumentParser(
+    prog="vo.py",
+    description="""Run visual odometry on any video, 
+    when no arguments are provided the script will run
+    in KITTI mode on sequence 0 with SIFT_KNN.""",
+)
+
+parser.add_argument(
+    "-p",
+    "--path",
+    type=str,
+    help="path to the run folder",
+    default="latest",
+    metavar="",
+)
+
+args = vars(parser.parse_args())
 
 
 def draw_maps(all_poses):
+
     colors = [
-        (255, 0, 100),
-        (255, 0, 0),
-        (0, 255, 0),
-        (0, 0, 255),
-        (255, 255, 0),
-        (0, 255, 255),
-        (255, 0, 255),
+        (255, 0, 0),  # Red
+        (0, 255, 0),  # Green
+        (0, 0, 255),  # Blue
+        (255, 255, 0),  # Yellow
+        (255, 0, 255),  # Magenta
+        (0, 255, 255),  # Cyan
+        (128, 0, 0),  # Maroon
+        (0, 128, 0),  # Green (Dark)
+        (0, 0, 128),  # Navy
+        (128, 128, 0),  # Olive
+        (128, 0, 128),  # Purple
+        (0, 128, 128),  # Teal
     ]
+
     max_x = 0
     min_x = np.inf
     max_z = 0
@@ -56,14 +84,19 @@ def draw_maps(all_poses):
     return map
 
 
-path = os.getcwd() + "/data/output/"
-
-dirs = [path + d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
-dirs.sort()
-latest = dirs[-1]
-latest += "/"
+print(args["path"])
+if args["path"] != "latest":
+    fullpath = args["path"] + "/"
+else:
+    path = os.getcwd() + "/data/output/"
+    dirs = [path + d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+    dirs.sort()
+    fullpath = dirs[-1]
+    fullpath += "/"
 dirs = [
-    latest + d for d in os.listdir(latest) if os.path.isdir(os.path.join(latest, d))
+    fullpath + d
+    for d in os.listdir(fullpath)
+    if os.path.isdir(os.path.join(fullpath, d))
 ]
 
 # fig, axs = plt.subplots(3, 3, figsize=(5, 5))
@@ -98,14 +131,26 @@ for dir in dirs:
 
 final = []
 for key, value in aggregate.items():
+    aggregate[key]["error_avg"] = np.average(value["errors"])
+    aggregate[key]["error_std"] = np.std(value["errors"])
+    aggregate[key]["error_max"] = np.max(value["errors"])
 
-    aggregate[key]["average_error"] = np.average(value["errors"])
-    print(key, " ", aggregate[key]["average_error"].round(3))
-    final.append([key, aggregate[key]["average_error"]])
+    final.append(
+        [
+            key,
+            key.split("_")[-2],
+            key.split("_")[-1],
+            aggregate[key]["error_avg"],
+            aggregate[key]["error_std"],
+            aggregate[key]["error_max"],
+        ]
+    )
 
-sorted = sorted(final, key=lambda x: x[1])
+sorted = sorted(final, key=lambda x: x[3])
 tops = [x[0] for x in sorted]
 
+for s in sorted:
+    print(s[:4])
 seqid = 8
 
 all_poses = []
@@ -125,7 +170,26 @@ for dir in dirs:
                 all_poses.append(json.load(open(dir + "/gt.json")))
             all_poses.append(json.load(open(dir + "/est.json")))
 
+
+with open(fullpath + "/output.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    # Define column names
+    column_names = [
+        "name",
+        "scale",
+        "denoise",
+        "err_avg",
+        "err_std",
+        "err_max",
+    ]  # Replace with your actual column names
+    # Write column names as the first row
+    writer.writerow(column_names)
+    # Write each list in 'final' as a row in the CSV
+    for row in final:
+        writer.writerow(row)
+
 map = draw_maps(all_poses)
+
 
 cv.imshow("map", map)
 cv.waitKey(0)
