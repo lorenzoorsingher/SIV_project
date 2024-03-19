@@ -41,7 +41,7 @@ orb = data[data["fm"] == "ORB"].sort_values("steps_sec")
 plt.plot(
     orb["steps_sec"],
     orb["err_avg"],
-    label="Column 1",
+    label="ORB",
 )  # Replace 'x_column1' and 'y_column1' with the names of your columns
 
 sift = data[data["fm"] == "SIFT"].sort_values("steps_sec")
@@ -50,12 +50,14 @@ sift = data[data["fm"] == "SIFT"].sort_values("steps_sec")
 plt.plot(
     sift["steps_sec"],
     sift["err_avg"],
-    label="Column 2",
+    label="SIFT",
 )  # Replace 'x_column2' and 'y_column2' with the names of your columns
 # Add labels and title
 plt.xlabel("FPS")  # Replace 'X-axis label' with the label for the x-axis
 plt.ylabel("error")  # Replace 'Y-axis label' with the label for the y-axis
-plt.title("Title")  # Replace 'Title' with the title of the graph
+plt.title(
+    "Correlation between average error and speed of computation (Frame Per Second)"
+)  # Replace 'Title' with the title of the graph
 
 # Add a legend
 plt.legend()
