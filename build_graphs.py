@@ -56,7 +56,7 @@ plt.plot(
 plt.xlabel("FPS")  # Replace 'X-axis label' with the label for the x-axis
 plt.ylabel("error")  # Replace 'Y-axis label' with the label for the y-axis
 plt.title(
-    "Correlation between average error and speed of computation (Frame Per Second)"
+    "Correlation between average error and speed of computation ($\it{Frames\ Per\ Second}$)"
 )  # Replace 'Title' with the title of the graph
 
 # Add a legend
