@@ -23,7 +23,7 @@ scales = [0.5]
 
 denoise = [0]
 
-sequences = [0]
+sequences = [22]
 
 nfeatures = [10, 100, 500, 3000, 6000, 10000]
 
