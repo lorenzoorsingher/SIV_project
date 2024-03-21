@@ -17,26 +17,34 @@ if not os.path.exists(out_path):
 
 feature_matchers = [
     ORB_FLANN,
-    SIFT_FLANN,
+    SIFT_FLANN_LOWE,
 ]
-scales = [0.5]
+scales = [1]
 
 denoise = [0]
 
-sequences = [22]
+sequences = [3, 8]
 
-nfeatures = [10, 100, 500, 3000, 6000, 10000]
+nfeatures = {
+    ORB_FLANN: [6000],
+    SIFT_FLANN_LOWE: [1000],
+}
 
-steps = 300
+steps = 3000
 
 ##########
+
+
+total_steps = (
+    len(sequences) * len(scales) * len(denoise) * len(nfeatures) * len(feature_matchers)
+)
 
 index = 0
 for sequence in sequences:
     for scale in scales:
         for denoise_val in denoise:
-            for nfeat in nfeatures:
-                for fm in feature_matchers:
+            for fm in feature_matchers:
+                for nfeat in nfeatures[fm]:
                     eval_path = out_path + "/eval_" + str(index)
                     if not os.path.exists(eval_path):
                         os.makedirs(eval_path)
@@ -53,6 +61,10 @@ for sequence in sequences:
                         FM[fm],
                         " @ ",
                         nfeat,
+                        " ",
+                        index,
+                        "/",
+                        total_steps,
                     )
                     os.system(
                         sys.executable
@@ -72,3 +84,5 @@ for sequence in sequences:
                         + str(denoise_val)
                         + " -nd"
                     )
+
+os.system(sys.executable + " compare_results.py")
