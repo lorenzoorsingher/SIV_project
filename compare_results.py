@@ -31,6 +31,7 @@ args = vars(parser.parse_args())
 def draw_maps(all_poses):
 
     colors = [
+        (0, 0, 0),
         (255, 0, 0),  # Red
         (0, 255, 0),  # Green
         (0, 0, 255),  # Blue
@@ -69,17 +70,31 @@ def draw_maps(all_poses):
     origin = (-min_x, -min_z)
     map = np.full(map_size, 255, dtype=np.uint8)
 
+    x = all_poses[0][0][3]
+    z = all_poses[0][0][11]
+    map = cv.circle(
+        map,
+        (int(x) + origin[0], int(z) + origin[1]),
+        1,
+        (0, 0, 0),
+        (size_z * size_x) // 20000,
+    )
+
     for idx, poses in enumerate(all_poses):
         for pose in poses:
             x = pose[3]
             z = pose[11]
             # update trace of map
+            if idx == 0:
+                linesize = (size_z * size_x) // 80000
+            else:
+                linesize = (size_z * size_x) // 130000
             map = cv.circle(
                 map,
                 (int(x) + origin[0], int(z) + origin[1]),
                 1,
                 colors[idx],
-                (size_z * size_x) // 80000,
+                linesize,
             )
     return map
 
@@ -135,15 +150,16 @@ for dir in dirs:
 
 final = []
 for key, value in aggregate.items():
-    aggregate[key]["error_avg"] = np.average(value["errors"])
-    aggregate[key]["error_std"] = np.std(value["errors"])
-    aggregate[key]["error_max"] = np.max(value["errors"])
-    aggregate[key]["steps_sec"] = np.average(value["steps_sec"])
+    aggregate[key]["error_avg"] = np.average(value["errors"]).round(2)
+    aggregate[key]["error_std"] = np.std(value["errors"]).round(2)
+    aggregate[key]["error_max"] = np.max(value["errors"]).round(2)
+    aggregate[key]["steps_sec"] = int(np.average(value["steps_sec"]))
 
     final.append(
         [
             key,
             key.split("_")[0],
+            "_".join(key.split("_")[1:-3]),
             key.split("_")[-3],
             key.split("_")[-2],
             key.split("_")[-1],
@@ -154,12 +170,13 @@ for key, value in aggregate.items():
         ]
     )
 
-sorted = sorted(final, key=lambda x: x[5])
+sorted = sorted(final, key=lambda x: x[6])
 tops = [x[0] for x in sorted]
 
 for s in sorted:
     print(s)
-seqid = 0
+
+seqid = 3
 
 all_poses = []
 for dir in dirs:
@@ -188,6 +205,7 @@ with open(fullpath + "output.csv", "w", newline="") as file:
     column_names = [
         "name",
         "fm",
+        "matcher",
         "nfeat",
         "scale",
         "denoise",
@@ -204,6 +222,6 @@ with open(fullpath + "output.csv", "w", newline="") as file:
 map = draw_maps(all_poses)
 
 
+cv.namedWindow("map", cv.WINDOW_NORMAL)
 cv.imshow("map", map)
 cv.waitKey(0)
-breakpoint()
