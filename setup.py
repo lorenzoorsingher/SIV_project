@@ -135,5 +135,14 @@ def get_args():
         metavar="",
     )
 
+    parser.add_argument(
+        "-ms",
+        "--map-size",
+        type=int,
+        help="Size of map",
+        default=1000,
+        metavar="",
+    )
+
     args = vars(parser.parse_args())
     return args

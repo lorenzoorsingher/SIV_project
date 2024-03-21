@@ -176,7 +176,7 @@ tops = [x[0] for x in sorted]
 for s in sorted:
     print(s)
 
-seqid = 3
+seqid = 0
 
 all_poses = []
 for dir in dirs:

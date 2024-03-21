@@ -33,6 +33,7 @@ calib_path = args["calib_path"]
 video_path = args["video_path"]
 do_images = args["kitti_imgs"] + "/dataset/sequences"
 do_poses = args["kitti_poses"] + "/dataset/poses"
+map_size_default = args["map_size"]
 
 ### THIS WILL BE REMOVED
 if out_path == "":
@@ -55,7 +56,12 @@ if MODE == "video":
     dist = np.array(data[1])
     if STEPS == -1:
         STEPS = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-    (max_x, min_x, max_z, min_z) = 300, -300, 300, -300
+    (max_x, min_x, max_z, min_z) = (
+        map_size_default,
+        -map_size_default,
+        map_size_default,
+        -map_size_default,
+    )
 if MODE == "kitti":
 
     kl = KittiLoader(do_images, do_poses, SEQUENCE)

@@ -16,21 +16,25 @@ if not os.path.exists(out_path):
 ########## SETTINGS SETUP
 
 feature_matchers = [
-    ORB_FLANN,
-    SIFT_FLANN_LOWE,
+    # SIFT_FLANN_LOWE,
+    SIFT_KNN,
+    # ORB_FLANN,
+    ORB_KNN,
 ]
 scales = [1]
 
 denoise = [0]
 
-sequences = [3, 8]
+sequences = [0, 8]
 
 nfeatures = {
-    ORB_FLANN: [6000],
-    SIFT_FLANN_LOWE: [1000],
+    SIFT_FLANN_LOWE: [50, 100, 500, 2000, 3000, 6000],
+    SIFT_KNN: [50, 100, 500, 2000, 3000, 6000],
+    ORB_FLANN: [1000, 2000, 3000, 6000, 8000, 10000],
+    ORB_KNN: [1000, 2000, 3000, 6000, 8000, 10000],
 }
 
-steps = 3000
+steps = 300
 
 ##########
 
