@@ -104,22 +104,33 @@ def save_metrics(
     fig, ax = plt.subplots()
     ax.plot(errors)
 
-    # smoothing the graph using cubic interpolation:
-    # x = np.arange(len(errors))
-    # y = np.array(errors)
-
-    # cubic_interpolation_model = interp1d(x, y, kind="cubic")  # needs scipy
-
-    # new_x = np.linspace(x[0], x[-1], 10 * len(x))
-
-    # smoothed_errors = cubic_interpolation_model(new_x)
-
-    # fig, ax = plt.subplots()
-    # ax.plot(new_x, smoothed_errors, color="red", label="Smoothed (Cubic Interpolation)")
-    ###
-
     ax.set_ylim([0, 1])  # Fix y-axis to 1
     plt.savefig(output_path + "/error.png", bbox_inches="tight")
 
     print("Metrics saved to", output_path)
     print("avg: ", np.mean(errors).round(3), " max: ", np.max(errors).round(3))
+
+
+def save_metrics_video(est_poses, settings, output_path="data/output", steps_sec=0):
+    """
+    Saves metrics (estimated poses, ground truth poses, and errors) to a file.
+
+    Parameters:
+        est_poses (list): List of estimated poses.
+        gt_poses (list): List of ground truth poses.
+        errors (list): List of errors.
+        output_path (str): Path to the output file.
+    """
+    est_dump = output_path + "/est.json"
+
+    settings_path = output_path + "/settings.json"
+    flattend = [np.array(pos).flatten().tolist() for pos in est_poses]
+    with open(est_dump, "w", encoding="utf-8") as f:
+        json.dump(flattend, f, ensure_ascii=False, indent=4)
+
+    settings["steps_sec"] = steps_sec
+
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, ensure_ascii=False, indent=4)
+
+    print("Metrics saved to", output_path)

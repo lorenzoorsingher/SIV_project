@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(
     prog="vo.py",
     description="""Run visual odometry on any video, 
     when no arguments are provided the script will run
-    in KITTI mode on sequence 0 with SIFT_KNN.""",
+    in KITTI mode on sequence 0 with SIFT_BF_LOWE.""",
 )
 
 parser.add_argument(
@@ -26,77 +26,6 @@ parser.add_argument(
 )
 
 args = vars(parser.parse_args())
-
-
-def draw_maps(all_poses):
-
-    colors = [
-        (0, 0, 0),
-        (255, 0, 0),  # Red
-        (0, 255, 0),  # Green
-        (0, 0, 255),  # Blue
-        (255, 255, 0),  # Yellow
-        (255, 0, 255),  # Magenta
-        (0, 255, 255),  # Cyan
-        (128, 0, 0),  # Maroon
-        (0, 128, 0),  # Green (Dark)
-        (0, 0, 128),  # Navy
-        (128, 128, 0),  # Olive
-        (128, 0, 128),  # Purple
-        (0, 128, 128),  # Teal
-    ]
-
-    max_x = 0
-    min_x = np.inf
-    max_z = 0
-    min_z = np.inf
-
-    for poses in all_poses:
-
-        max_x = max(max_x, int(np.array(poses)[:, 3].max()))
-        min_x = min(min_x, int(np.array(poses)[:, 3].min()))
-        max_z = max(max_z, int(np.array(poses)[:, 11].max()))
-        min_z = min(min_x, int(np.array(poses)[:, 11].min()))
-    # create and prepare maps
-    margin = 50
-    max_x += margin
-    min_x -= margin
-    max_z += margin
-    min_z -= margin
-
-    size_z = max_z - min_z
-    size_x = max_x - min_x
-    map_size = (size_z, size_x, 3)
-    origin = (-min_x, -min_z)
-    map = np.full(map_size, 255, dtype=np.uint8)
-
-    x = all_poses[0][0][3]
-    z = all_poses[0][0][11]
-    map = cv.circle(
-        map,
-        (int(x) + origin[0], int(z) + origin[1]),
-        1,
-        (0, 0, 0),
-        (size_z * size_x) // 20000,
-    )
-
-    for idx, poses in enumerate(all_poses):
-        for pose in poses:
-            x = pose[3]
-            z = pose[11]
-            # update trace of map
-            if idx == 0:
-                linesize = (size_z * size_x) // 80000
-            else:
-                linesize = (size_z * size_x) // 130000
-            map = cv.circle(
-                map,
-                (int(x) + origin[0], int(z) + origin[1]),
-                1,
-                colors[idx],
-                linesize,
-            )
-    return map
 
 
 print(args["path"])
@@ -123,7 +52,7 @@ dirs = [
 #     ax.imshow(np.asarray(sample_image))
 
 aggregate = {}
-
+squences = []
 for dir in dirs:
     settings = json.load(open(dir + "/settings.json"))
     name = (
@@ -147,13 +76,16 @@ for dir in dirs:
         aggregate[name]["errors"] += error
         aggregate[name]["steps_sec"] += [settings["steps_sec"]]
 
+    if settings["sequence"] not in squences:
+        squences.append(settings["sequence"])
 
 final = []
 for key, value in aggregate.items():
-    aggregate[key]["error_avg"] = np.average(value["errors"]).round(2)
-    aggregate[key]["error_std"] = np.std(value["errors"]).round(2)
-    aggregate[key]["error_max"] = np.max(value["errors"]).round(2)
+    aggregate[key]["error_avg"] = np.average(value["errors"]).round(3)
+    aggregate[key]["error_std"] = np.std(value["errors"]).round(3)
+    aggregate[key]["error_max"] = np.max(value["errors"]).round(3)
     aggregate[key]["steps_sec"] = int(np.average(value["steps_sec"]))
+    aggregate[key]["frame_time"] = (1 / np.average(value["steps_sec"])).round(3)
 
     final.append(
         [
@@ -167,6 +99,7 @@ for key, value in aggregate.items():
             aggregate[key]["error_std"],
             aggregate[key]["error_max"],
             aggregate[key]["steps_sec"],
+            aggregate[key]["frame_time"],
         ]
     )
 
@@ -176,27 +109,30 @@ tops = [x[0] for x in sorted]
 for s in sorted:
     print(s)
 
-seqid = 0
 
-all_poses = []
-for dir in dirs:
+all_sequences = []
 
-    settings = json.load(open(dir + "/settings.json"))
-    name = (
-        FM[int(settings["feat_match"])]
-        + "_"
-        + str(settings["num_feat"])
-        + "_"
-        + str(settings["scale_factor"])
-        + "_"
-        + str(settings["denoise"])
-    )
+for seqid in squences:
+    all_poses = []
+    for dir in dirs:
 
-    if name in tops[:3]:
-        if settings["sequence"] == seqid:
-            if len(all_poses) == 0:
-                all_poses.append(json.load(open(dir + "/gt.json")))
-            all_poses.append(json.load(open(dir + "/est.json")))
+        settings = json.load(open(dir + "/settings.json"))
+        name = (
+            FM[int(settings["feat_match"])]
+            + "_"
+            + str(settings["num_feat"])
+            + "_"
+            + str(settings["scale_factor"])
+            + "_"
+            + str(settings["denoise"])
+        )
+
+        if name in tops[:3]:
+            if settings["sequence"] == seqid:
+                if len(all_poses) == 0:
+                    all_poses.append(json.load(open(dir + "/gt.json")))
+                all_poses.append(json.load(open(dir + "/est.json")))
+    all_sequences.append(all_poses)
 
 with open(fullpath + "output.csv", "w", newline="") as file:
     print(fullpath + "output.csv")
@@ -213,15 +149,24 @@ with open(fullpath + "output.csv", "w", newline="") as file:
         "err_std",
         "err_max",
         "steps_sec",
+        "frame_time",
     ]  # Replace with your actual column names
     # Write column names as the first row
     writer.writerow(column_names)
     # Write each list in 'final' as a row in the CSV
     for row in final:
         writer.writerow(row)
-map = draw_maps(all_poses)
+
+
+maps = []
+for all_poses in all_sequences:
+    map = draw_maps(all_poses)
+    height = 300
+    width = (height / map.shape[0]) * map.shape[1]
+    map = cv.resize(map, (int(width), height))
+    maps.append(map)
 
 
 cv.namedWindow("map", cv.WINDOW_NORMAL)
-cv.imshow("map", map)
+cv.imshow("map", np.hstack(maps))
 cv.waitKey(0)

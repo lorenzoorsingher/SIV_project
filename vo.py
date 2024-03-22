@@ -11,7 +11,7 @@ from common import *
 from VOAgent import VOAgent
 from kitti_loader import KittiLoader
 from setup import get_args
-from evaluation import compute_error, save_metrics
+from evaluation import compute_error, save_metrics, save_metrics_video
 
 np.set_printoptions(formatter={"all": lambda x: str(x)})
 # get arguments
@@ -167,12 +167,15 @@ run_time = time.time() - start_time
 steps_sec = STEPS / run_time
 
 # only runs if output path is set
-if out_path != "":
-    save_metrics(
-        est_poses,
-        gt_poses,
-        errors,
-        settings=args,
-        output_path=out_path,
-        steps_sec=steps_sec,
-    )
+if MODE == "kitti":
+    if out_path != "":
+        save_metrics(
+            est_poses,
+            gt_poses,
+            errors,
+            settings=args,
+            output_path=out_path,
+            steps_sec=steps_sec,
+        )
+else:
+    save_metrics_video(est_poses, args, out_path, steps_sec)
