@@ -178,7 +178,7 @@ def draw_maps(all_poses, no_gt=False):
         max_x = max(max_x, int(np.array(poses)[:, 3].max()))
         min_x = min(min_x, int(np.array(poses)[:, 3].min()))
         max_z = max(max_z, int(np.array(poses)[:, 11].max()))
-        min_z = min(min_x, int(np.array(poses)[:, 11].min()))
+        min_z = min(min_z, int(np.array(poses)[:, 11].min()))
     # create and prepare maps
     margin = 50
     max_x += margin
