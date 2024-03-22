@@ -6,13 +6,20 @@ from copy import copy
 
 from kitti_loader import KittiLoader
 
-ORB_BF = 0
-ORB_FLANN = 1
-SIFT_FLANN = 2
-SIFT_KNN = 3
-ORB_KNN = 4
+ORB_BF_SORT = 0
+ORB_FLANN_LOWE = 1
+SIFT_FLANN_SORT = 2
+SIFT_BF_LOWE = 3
+ORB_BF_LOWE = 4
 SIFT_FLANN_LOWE = 5
-FM = ["ORB_BF", "ORB_FLANN", "SIFT_FLANN", "SIFT_KNN", "ORB_KNN", "SIFT_FLANN_LOWE"]
+FM = [
+    "ORB_BF_SORT",
+    "ORB_FLANN_LOWE",
+    "SIFT_FLANN_SORT",
+    "SIFT_BF_LOWE",
+    "ORB_BF_LOWE",
+    "SIFT_FLANN_LOWE",
+]
 
 # consts for FLANN
 FLANN_INDEX_LINEAR = 0
@@ -144,14 +151,36 @@ def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
     return map
 
 
-def draw_maps(poses):
-    (max_x, min_x, max_z, min_z) = 0, 0, 0, 0
+def draw_maps(all_poses):
 
-    for pos in poses:
-        max_x = max(max_x, int(np.array(pos)[:, :, 3][:, 0].max()))
-        min_x = min(min_x, int(np.array(pos)[:, :, 3][:, 0].min()))
-        max_z = max(max_z, int(np.array(pos)[:, :, 3][:, 2].max()))
-        min_z = min(min_x, int(np.array(pos)[:, :, 3][:, 2].min()))
+    colors = [
+        (0, 0, 0),
+        (255, 0, 0),  # Red
+        (0, 255, 0),  # Green
+        (0, 0, 255),  # Blue
+        (255, 255, 0),  # Yellow
+        (255, 0, 255),  # Magenta
+        (0, 255, 255),  # Cyan
+        (128, 0, 0),  # Maroon
+        (0, 128, 0),  # Green (Dark)
+        (0, 0, 128),  # Navy
+        (128, 128, 0),  # Olive
+        (128, 0, 128),  # Purple
+        (0, 128, 128),  # Teal
+    ]
+
+    max_x = 0
+    min_x = np.inf
+    max_z = 0
+    min_z = np.inf
+
+    for poses in all_poses:
+
+        max_x = max(max_x, int(np.array(poses)[:, 3].max()))
+        min_x = min(min_x, int(np.array(poses)[:, 3].min()))
+        max_z = max(max_z, int(np.array(poses)[:, 11].max()))
+        min_z = min(min_x, int(np.array(poses)[:, 11].min()))
+    # create and prepare maps
     margin = 50
     max_x += margin
     min_x -= margin
@@ -162,8 +191,35 @@ def draw_maps(poses):
     size_x = max_x - min_x
     map_size = (size_z, size_x, 3)
     origin = (-min_x, -min_z)
+    map = np.full(map_size, 255, dtype=np.uint8)
 
-    track_map = np.full(map_size, 255, dtype=np.uint8)
+    x = all_poses[0][0][3]
+    z = all_poses[0][0][11]
+    map = cv.circle(
+        map,
+        (int(x) + origin[0], int(z) + origin[1]),
+        1,
+        (0, 0, 0),
+        (size_z * size_x) // 20000,
+    )
+
+    for idx, poses in enumerate(all_poses):
+        for pose in poses:
+            x = pose[3]
+            z = pose[11]
+            # update trace of map
+            if idx == 0:
+                linesize = (size_z * size_x) // 80000
+            else:
+                linesize = (size_z * size_x) // 130000
+            map = cv.circle(
+                map,
+                (int(x) + origin[0], int(z) + origin[1]),
+                1,
+                colors[idx],
+                linesize,
+            )
+    return map
 
 
 def get_color(err, range=(0, 1)):

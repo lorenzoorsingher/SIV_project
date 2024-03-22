@@ -22,7 +22,7 @@ class VOAgent:
         mtx,
         dist,
         buf_size=1,
-        matcher_method=SIFT_KNN,
+        matcher_method=SIFT_BF_LOWE,
         num_feat=500,
         scale_factor=1,
         denoise=0,
@@ -92,16 +92,16 @@ class VOAgent:
             uimg2 = img2
 
         # set matcher method
-        if self.matcher_method == SIFT_KNN:
-            matcher = self.SIFT_KNN
-        elif self.matcher_method == SIFT_FLANN:
-            matcher = self.SIFT_FLANN
-        elif self.matcher_method == ORB_BF:
-            matcher = self.ORB_BF
-        elif self.matcher_method == ORB_KNN:
-            matcher = self.ORB_KNN
-        elif self.matcher_method == ORB_FLANN:
-            matcher = self.ORB_FLANN
+        if self.matcher_method == SIFT_BF_LOWE:
+            matcher = self.SIFT_BF_LOWE
+        elif self.matcher_method == SIFT_FLANN_SORT:
+            matcher = self.SIFT_FLANN_SORT
+        elif self.matcher_method == ORB_BF_SORT:
+            matcher = self.ORB_BF_SORT
+        elif self.matcher_method == ORB_BF_LOWE:
+            matcher = self.ORB_BF_LOWE
+        elif self.matcher_method == ORB_FLANN_LOWE:
+            matcher = self.ORB_FLANN_LOWE
         elif self.matcher_method == SIFT_FLANN_LOWE:
             matcher = self.SIFT_FLANN_LOWE
 
@@ -304,7 +304,7 @@ class VOAgent:
             cv.namedWindow("feature_matching", cv.WINDOW_NORMAL)
             cv.imshow("feature_matching", img3)
 
-    def SIFT_KNN(self, kp1, des1, prevFrame, nextFrame):
+    def SIFT_BF_LOWE(self, kp1, des1, prevFrame, nextFrame):
         # Initiate SIFT detector
         sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
@@ -365,7 +365,7 @@ class VOAgent:
 
         return pFrame1, pFrame2, kp2, des2
 
-    def SIFT_FLANN(self, kp1, des1, prevFrame, nextFrame):
+    def SIFT_FLANN_SORT(self, kp1, des1, prevFrame, nextFrame):
         # Initiate SIFT detector
         sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
@@ -397,7 +397,7 @@ class VOAgent:
 
         return pFrame1, pFrame2, kp2, des2
 
-    def ORB_KNN(self, kp1, des1, prevFrame, nextFrame):
+    def ORB_BF_LOWE(self, kp1, des1, prevFrame, nextFrame):
         orb = cv.ORB_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(nextFrame, None)
@@ -429,7 +429,7 @@ class VOAgent:
 
         return pFrame1, pFrame2, kp2, des2
 
-    def ORB_BF(self, kp1, des1, prevFrame, nextFrame):
+    def ORB_BF_SORT(self, kp1, des1, prevFrame, nextFrame):
         orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(nextFrame, None)
@@ -459,7 +459,7 @@ class VOAgent:
         # breakpoint()
         return pFrame1, pFrame2, kp2, des2
 
-    def ORB_FLANN(self, kp1, des1, prevFrame, nextFrame):
+    def ORB_FLANN_LOWE(self, kp1, des1, prevFrame, nextFrame):
         # Initiate ORB detector
         orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB

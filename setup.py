@@ -6,7 +6,7 @@ def get_args():
         prog="vo.py",
         description="""Run visual odometry on any video, 
         when no arguments are provided the script will run
-        in KITTI mode on sequence 0 with SIFT_KNN.""",
+        in KITTI mode on sequence 0 with SIFT_BF_LOWE.""",
     )
 
     parser.add_argument(
@@ -67,7 +67,7 @@ def get_args():
         "-fm",
         "--feat-match",
         type=int,
-        help="Set the feature matching method. [0|1|2|3|4|5] (ORB_BF, ORB_FLANN, SIFT_FLANN, *SIFT_KNN, ORB_KNN, SIFT_FLANN_LOWE)",
+        help="Set the feature matching method. [0|1|2|3|4|5] (ORB_BF_SORT, ORB_FLANN_LOWE, SIFT_FLANN_SORT, *SIFT_BF_LOWE, ORB_BF_LOWE, SIFT_FLANN_LOWE)",
         default=3,
         metavar="",
     )
