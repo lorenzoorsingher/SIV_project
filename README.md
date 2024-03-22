@@ -26,8 +26,13 @@ The project is entirely built in python and, while for many tasks we relayed on 
 ### Project Structure
 
 ```
-SIV_project/                            # main project directory
-├── camera_data                         # calibration files 
+
+
+├── calibration
+│   ├── camera_calibration_charuco.py
+│   └── camera_calibration_normal.py
+├── camera_data
+│   ├── board.png
 │   ├── calib.json
 │   └── ...
 ├── data                                # datasets and videos
@@ -46,18 +51,27 @@ SIV_project/                            # main project directory
 │   │           ├── 00.txt
 │   │           └──  ...
 │   └──  ...
-├── camera_calibration_charuco.py       # Calib script for ChArUco board
-├── camera_calibration_normal.py        # Calib script for standard board
-├── common.py                           # Constants and common func
-├── kitti_loader.py                     # KITTI loader class
-├── vo.py                               # run script
-├── setup.py                            # arguments parsing
-├── test_runs.py                        # runs many combinations
-├── VOAgent.py                          # VOAgent class
-├── evaluation.py                       # performance metrics
-├── position.py                         # Position classe
-└── requirements.txt                    # Requirements
+├── tests
+│   ├── __init__.py
+│   ├── build_graphs.ipynb
+│   ├── compare_results.py
+│   ├── test_runs.py
+│   └── test_runs_video.py
+├── images
+│   └── ...
+├── __init__.py
+├── common.py
+├── evaluation.py
+├── kitti_loader.py
+├── position.py
+├── setup.py
+├── VOAgent.py
+├── vo.py
+├── README.md
+└── requirements.txt
+
 ```
+
 
 ## Usage
 
@@ -116,6 +130,41 @@ And the amount of scaling to apply to the images
 ```
 python vo.py -m kitti -sf 0.5
 ```
+Use <i>-h</i> for a comprehensive list of options
+
+```
+options:
+  -h, --help            show this help message and exit
+  -m , --mode           Set the input mode for VO. ['video'|'kitti']
+  -s , --sequence       Index of KITTI sequence [kitti mode]
+  -st , --steps         Number of frames to analyse. -1 for all frames.
+  -f , --frameskip      Set the frequency of frames to analyse
+  -o , --output         Output folder for the results
+  -nd, --no-debug       Do not show debug windows
+  -fm , --feat-match    Set the feature matching method. [0|1|2|3|4|5](see common.py) 
+  -nf , --num-feat      Set the number of features to detect in each frame. [video mode]
+  -cp , --calib-path    Path to the calibration file. [video mode]
+  -vp , --video-path    Path to the video file. [video mode]
+  -ki , --kitti-imgs    Path to the data_odometry_gray folder. [kitti mode]
+  -kp , --kitti-poses   Path to the data_odometry_poses folder. [kitti mode]
+  -sf , --scale-factor  Amount of scaling to apply to the images
+  -de , --denoise       Amount (size of kernel) of gaussian blur to apply to the images for denoising. Default 0
+  -ms , --map-size      Size of map
+```
+
+## Calibration
+
+In order to calibrate the camera you can use the provided scripts <i>camera_calibration_charuco.py</i> and <i>camera_calibration_normal.py</i>. It's <i>highly recommended</i> to use the ChArUco script for calibration with the provided board image in the <i>camera_data</i> folder.
+
+To calibrate the camera using the ChArUco board you must first record a video of the board from different angles making sure to cover the entire camera frame.
+
+After that execute the script priding the path to the video as well as the output path for the calibration file
+
+```
+camera_calibration_charuco.py -v {video/path.mp4} -O {output/file/path.json}
+```
+
+
 
 ## TODO 
 
