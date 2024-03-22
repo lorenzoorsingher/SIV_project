@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(
     prog="vo.py",
     description="""Run visual odometry on any video, 
     when no arguments are provided the script will run
-    in KITTI mode on sequence 0 with SIFT_KNN.""",
+    in KITTI mode on sequence 0 with SIFT_BF_LOWE.""",
 )
 
 parser.add_argument(
