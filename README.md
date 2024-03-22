@@ -142,7 +142,7 @@ options:
   -o , --output         Output folder for the results
   -nd, --no-debug       Do not show debug windows
   -fm , --feat-match    Set the feature matching method. [0|1|2|3|4|5](see common.py) 
-  -nf , --num-feat      Set the number of features to detect in each frame. [video mode]
+  -nf , --num-feat      Set the max number of features to detect in each frame.
   -cp , --calib-path    Path to the calibration file. [video mode]
   -vp , --video-path    Path to the video file. [video mode]
   -ki , --kitti-imgs    Path to the data_odometry_gray folder. [kitti mode]
