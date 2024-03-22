@@ -151,10 +151,9 @@ def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
     return map
 
 
-def draw_maps(all_poses):
+def draw_maps(all_poses, no_gt=False):
 
     colors = [
-        (0, 0, 0),
         (255, 0, 0),  # Red
         (0, 255, 0),  # Green
         (0, 0, 255),  # Blue
@@ -207,16 +206,18 @@ def draw_maps(all_poses):
         for pose in poses:
             x = pose[3]
             z = pose[11]
-            # update trace of map
-            if idx == 0:
+
+            if not no_gt and idx == 0:
+                color = ((0, 0, 0),)
                 linesize = (size_z * size_x) // 80000
             else:
+                color = colors[idx]
                 linesize = (size_z * size_x) // 130000
             map = cv.circle(
                 map,
                 (int(x) + origin[0], int(z) + origin[1]),
                 1,
-                colors[idx],
+                color,
                 linesize,
             )
     return map

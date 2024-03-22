@@ -6,6 +6,8 @@ import shutil
 import sys
 import time
 
+sys.path.append("./")
+
 from common import *
 
 
@@ -19,9 +21,9 @@ feature_matchers = [
     ORB_FLANN_LOWE,
     SIFT_FLANN_LOWE,
 ]
-scales = [1, 0.5, 0.25]
+scales = [1]
 
-denoise = [0]
+denoise = [0, 3, 9, 11]
 
 sequences = [0, 5]
 

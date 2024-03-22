@@ -6,6 +6,8 @@ import shutil
 import sys
 import time
 
+sys.path.append("./")
+
 from common import *
 
 # TODO EVERYTHING
@@ -16,9 +18,10 @@ if not os.path.exists(out_path):
 ########## SETTINGS SETUP
 
 feature_matchers = [
-    ORB_FLANN_LOWE,
+    # ORB_FLANN_LOWE,
+    SIFT_FLANN_LOWE,
 ]
-scales = [0.25]
+scales = [0.5]
 
 denoise = [0]
 
@@ -26,18 +29,18 @@ video_path = "data/povo/povo_run.mp4"
 calib_path = "camera_data/povo_calib.json"
 
 nfeatures = {
-    SIFT_FLANN_LOWE: [50, 100, 500, 2000, 3000, 6000],
+    SIFT_FLANN_LOWE: [6000],
     SIFT_BF_LOWE: [50, 100, 500, 2000, 3000, 6000],
-    ORB_FLANN_LOWE: [2000, 3000, 6000],
+    ORB_FLANN_LOWE: [8000],
     ORB_BF_LOWE: [1000, 2000, 3000, 6000, 8000, 10000],
 }
 
 
-steps = 10
+steps = 3200
 
 ##########
 tot_fm = sum([len(x[1]) for x in nfeatures.items() if x[0] in feature_matchers])
-total_steps = len(scales) * len(denoise) * len(feature_matchers) * tot_fm
+total_steps = len(scales) * len(denoise) * tot_fm
 
 index = 0
 for scale in scales:
@@ -83,33 +86,3 @@ for scale in scales:
                     + str(denoise_val)
                     + " -nd"
                 )
-
-
-path = os.getcwd() + "/data/output/"
-dirs = [path + d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
-dirs.sort()
-fullpath = dirs[-1]
-fullpath += "/"
-dirs = [
-    fullpath + d
-    for d in os.listdir(fullpath)
-    if os.path.isdir(os.path.join(fullpath, d))
-]
-
-all_poses = []
-for dir in dirs:
-    settings = json.load(open(dir + "/settings.json"))
-    name = (
-        FM[int(settings["feat_match"])]
-        + "_"
-        + str(settings["num_feat"])
-        + "_"
-        + str(settings["scale_factor"])
-        + "_"
-        + str(settings["denoise"])
-    )
-
-    if len(all_poses) == 0:
-        all_poses.append(json.load(open(dir + "/est.json")))
-
-breakpoint()

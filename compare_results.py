@@ -4,9 +4,12 @@ import json
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
+
+
+sys.path.append("./")
 
 from common import *
-import argparse
 
 
 parser = argparse.ArgumentParser(
@@ -105,6 +108,7 @@ for key, value in aggregate.items():
 
 sorted = sorted(final, key=lambda x: x[6])
 tops = [x[0] for x in sorted]
+tops = ["SIFT_FLANN_LOWE_6000_1.0_0", "ORB_FLANN_LOWE_8000_1.0_0"]
 
 for s in sorted:
     print(s)
@@ -161,7 +165,7 @@ with open(fullpath + "output.csv", "w", newline="") as file:
 maps = []
 for all_poses in all_sequences:
     map = draw_maps(all_poses)
-    height = 300
+    height = 1000
     width = (height / map.shape[0]) * map.shape[1]
     map = cv.resize(map, (int(width), height))
     maps.append(map)

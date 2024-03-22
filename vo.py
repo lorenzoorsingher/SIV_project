@@ -51,7 +51,9 @@ if MODE == "video":
 
     cap = cv.VideoCapture(video_path)
 
-    data = json.load(open(calib_path))
+    with open(calib_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
     mtx = np.array(data[0])
     dist = np.array(data[1])
     if STEPS == -1:
