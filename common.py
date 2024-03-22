@@ -208,7 +208,7 @@ def draw_maps(all_poses, no_gt=False):
             z = pose[11]
 
             if not no_gt and idx == 0:
-                color = ((0, 0, 0),)
+                color = (0, 0, 0)
                 linesize = (size_z * size_x) // 80000
             else:
                 color = colors[idx]

@@ -108,7 +108,7 @@ for key, value in aggregate.items():
 
 sorted = sorted(final, key=lambda x: x[6])
 tops = [x[0] for x in sorted]
-tops = ["SIFT_FLANN_LOWE_6000_1.0_0", "ORB_FLANN_LOWE_8000_1.0_0"]
+# tops = ["SIFT_FLANN_LOWE_6000_1.0_0", "ORB_FLANN_LOWE_8000_1.0_0"]
 
 for s in sorted:
     print(s)
@@ -160,7 +160,6 @@ with open(fullpath + "output.csv", "w", newline="") as file:
     # Write each list in 'final' as a row in the CSV
     for row in final:
         writer.writerow(row)
-
 
 maps = []
 for all_poses in all_sequences:
