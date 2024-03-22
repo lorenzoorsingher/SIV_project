@@ -219,14 +219,14 @@ If the path is not provided, the script will automatically pick the latest run.
 
 ## TODO 
 
-- add some default test data
-- loop closure
-- comparative testing sys
+- <strike>add some default test data</strike>
+- <strike>loop closure</strike> [not implemented]
+- <strike>comparative testing sys</strike>
 - <strike>parametrize script</strike>
-- implementation of error function 
+- <strike>implementation of error function</strike>
 - <strike>pre-processing (downsampling and denoising)</strike>
 - report
-- provide instructions for camera calibration
+- <strike>provide instructions for camera calibration</strike>
 
 
 ## Authors 
