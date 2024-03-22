@@ -3,4 +3,5 @@ opencv-contrib-python
 opencv-python         
 tqdm        
 matplotlib   
-scipy     
+scikit-learn
+pandas     
