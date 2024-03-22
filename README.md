@@ -205,6 +205,15 @@ compare_results.py -p {data/output/run_12345}
 
 If the path is not provided, the script will automatically pick the latest run.
 
+| name                        | fm   | matcher    | nfeat | scale | denoise | err_avg | err_std | err_max | steps_sec | frame_time |
+|-----------------------------|------|------------|-------|-------|---------|---------|---------|---------|-----------|------------|
+| SIFT_FLANN_LOWE_1000_1.0_9  | SIFT | FLANN_LOWE | 1000  | 1.0   | 9       | 0.237   | 0.145   | 0.731   | 20        | 0.05       |
+| ORB_FLANN_LOWE_8000_1.0_9   | ORB  | FLANN_LOWE | 8000  | 1.0   | 9       | 0.271   | 0.152   | 0.78    | 23        | 0.043      |
+| ORB_FLANN_LOWE_8000_1.0_11  | ORB  | FLANN_LOWE | 8000  | 1.0   | 11      | 0.277   | 0.155   | 0.878   | 27        | 0.037      |
+| ORB_FLANN_LOWE_8000_1.0_0   | ORB  | FLANN_LOWE | 8000  | 1.0   | 0       | 0.271   | 0.156   | 0.837   | 10        | 0.1        |
+| SIFT_FLANN_LOWE_1000_1.0_11 | SIFT | FLANN_LOWE | 1000  | 1.0   | 11      | 0.245   | 0.139   | 0.632   | 20        | 0.05       |
+
+
 <img src="images/many_tracks.png">
 
 
