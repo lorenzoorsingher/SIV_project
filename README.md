@@ -15,7 +15,7 @@ The main objective is to construct a robust system that can be used on different
 
 <br>
 <div style="text-align:center;">
-<img src="images/track.png" width=30%>
+<img src="images/many_tracks.png" width=90%>
 </div>
 <br>
 
@@ -75,7 +75,9 @@ The project is entirely built in python and, while for many tasks we relayed on 
 
 ## Usage
 
-install requirements
+For a **quick start** it's highly recommended to use the lighter version of the KITTI dataset, available at the Google Drive link below and follow the instructions in the next section!
+
+Install requirements
 
 ```
 pip install -r requirements.txt
@@ -91,16 +93,16 @@ A lighter 225MB version containig only sequence 22 is available at this link on 
 ```
 data/data_odometry_gray
 ```
-Run vo.py in kitti mode (default)
+Run vo.py in kitti mode (it's also the default mode)
 
 ```
 python vo.py -m kitti
 ```
 
-You can provide the desired <i>sequence</i> index to be run 
+You can provide the desired <i>sequence</i> index to be run, keep in mind the light version of the dataset only contains sequence 22
 
 ```
-python vo.py -m kitti -s 2
+python vo.py -m kitti -s 22
 ```
 
 ### With videos
@@ -214,7 +216,7 @@ If the path is not provided, the script will automatically pick the latest run.
 | SIFT_FLANN_LOWE_1000_1.0_11 | SIFT | FLANN_LOWE | 1000  | 1.0   | 11      | 0.245   | 0.139   | 0.632   | 20        | 0.05       |
 
 
-<img src="images/many_tracks.png">
+<img src="images/fullrun_track.png">
 
 
 ## TODO 
