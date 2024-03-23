@@ -10,34 +10,50 @@ sys.path.append("./")
 
 from common import *
 
+"""
+This script is used to run multiple tests with different settings.
+It will run the vo.py script with different settings and save the results in different folders.
+After all the tests are done, it will run the compare_results.py script to compare the results.
+"""
 
+# create output path if not set
 out_path = os.getcwd() + "/data/output/run_" + str(time.time())[:-8]
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 
-########## SETTINGS SETUP
+########## SETTINGS SETUP ############################################################################
 
+# uncomment the feature matchers you want to test
 feature_matchers = [
-    # ORB_FLANN_LOWE,
     SIFT_FLANN_LOWE,
+    # SIFT_BF_LOWE,
+    # ORB_FLANN_LOWE,
+    # ORB_BF_LOWE,
 ]
+
+# insert the scales you want to test
 scales = [1]
 
+# insert the denoise values (kernel sizes) you want to test
 denoise = [0]
 
+# insert the sequences you want to test
 sequences = [0]
 
+# for each feature matcher, insert the numbers of feature caps you want to test
 nfeatures = {
-    SIFT_FLANN_LOWE: [9000],  # 500
+    SIFT_FLANN_LOWE: [9000],
     SIFT_BF_LOWE: [1000],
     ORB_FLANN_LOWE: [3000],
     ORB_BF_LOWE: [8000],
 }
 
-
+# number of steps to run the VO
 steps = 300
 
-##########
+########################################################################################################################
+
+# compute total number of steps
 tot_fm = sum([len(x[1]) for x in nfeatures.items() if x[0] in feature_matchers])
 total_steps = len(sequences) * len(scales) * len(denoise) * tot_fm
 

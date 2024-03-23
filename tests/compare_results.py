@@ -11,6 +11,10 @@ sys.path.append("./")
 
 from common import *
 
+"""
+This script is used to compare the results of different runs,
+it will read the output files from the runs and compare the results.
+"""
 
 parser = argparse.ArgumentParser(
     prog="vo.py",
@@ -30,7 +34,7 @@ parser.add_argument(
 
 args = vars(parser.parse_args())
 
-
+# if no path is provided, use the latest run
 print(args["path"])
 if args["path"] != "latest":
     fullpath = args["path"] + "/"
@@ -46,14 +50,8 @@ dirs = [
     if os.path.isdir(os.path.join(fullpath, d))
 ]
 
-# fig, axs = plt.subplots(3, 3, figsize=(5, 5))
-# for ax_idx, ax in enumerate(axs.flatten()):
-#     sample_image, sample_label = dataset[ax_idx]
 
-#     ax.axis("off")
-#     ax.set_title(f"Class: {sample_label}")
-#     ax.imshow(np.asarray(sample_image))
-
+# aggregates the errors for all the sequences of each setting
 aggregate = {}
 squences = []
 for dir in dirs:
@@ -82,6 +80,7 @@ for dir in dirs:
     if settings["sequence"] not in squences:
         squences.append(settings["sequence"])
 
+# calculate the average, std, and max error for each setting
 final = []
 for key, value in aggregate.items():
     aggregate[key]["error_avg"] = np.average(value["errors"]).round(3)
@@ -106,9 +105,11 @@ for key, value in aggregate.items():
         ]
     )
 
+# sort the settings by average error
 sorted = sorted(final, key=lambda x: x[6])
+
+# get keys of ordered settings
 tops = [x[0] for x in sorted]
-# tops = ["SIFT_FLANN_LOWE_6000_1.0_0", "ORB_FLANN_LOWE_8000_1.0_0"]
 
 for s in sorted:
     print(s)
@@ -116,6 +117,7 @@ for s in sorted:
 
 all_sequences = []
 
+# get the poses for the top 3 settings of each sequence
 for seqid in squences:
     all_poses = []
     for dir in dirs:
@@ -138,10 +140,10 @@ for seqid in squences:
                 all_poses.append(json.load(open(dir + "/est.json")))
     all_sequences.append(all_poses)
 
+# save the results to a csv file
 with open(fullpath + "output.csv", "w", newline="") as file:
     print(fullpath + "output.csv")
     writer = csv.writer(file)
-    # Define column names
     column_names = [
         "name",
         "fm",
@@ -154,13 +156,12 @@ with open(fullpath + "output.csv", "w", newline="") as file:
         "err_max",
         "steps_sec",
         "frame_time",
-    ]  # Replace with your actual column names
-    # Write column names as the first row
+    ]
     writer.writerow(column_names)
-    # Write each list in 'final' as a row in the CSV
     for row in final:
         writer.writerow(row)
 
+# draw the maps for the top 3 settings of each sequence
 maps = []
 for all_poses in all_sequences:
     map = draw_maps(all_poses)
@@ -168,7 +169,6 @@ for all_poses in all_sequences:
     width = (height / map.shape[0]) * map.shape[1]
     map = cv.resize(map, (int(width), height))
     maps.append(map)
-
 
 cv.namedWindow("map", cv.WINDOW_NORMAL)
 cv.imshow("map", np.hstack(maps))
