@@ -23,13 +23,14 @@ class Position:
 
         Parameters
         ----------
-        R (ndarray): Rotation matrix
-        t (ndarray): Translation vector
-        bad_data (bool): flag to indicate if the data is bad
+        - R (ndarray): Rotation matrix
+        - t (ndarray): Translation vector
+        - bad_data (bool): flag to indicate if the data is bad
+        - abs_scale (float): Absolute scale
 
         Returns
         -------
-        ndarray: The updated agent world position
+        - ndarray: The updated agent world position
         """
 
         # Check if the data is bad. If data is bad
@@ -39,7 +40,7 @@ class Position:
         if not bad_data:
             heading = rotationMatrixToEulerAngles(R) * 180 / np.pi
 
-            # TODO: there must be a better wahy to do this
+            # TODO: there must be a better way to do this
             if abs(heading[1]) >= 4:
                 bad_data = True
             #     print("X" * int(heading[1]))

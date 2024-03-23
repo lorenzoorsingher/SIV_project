@@ -35,12 +35,12 @@ do_images = args["kitti_imgs"] + "/dataset/sequences"
 do_poses = args["kitti_poses"] + "/dataset/poses"
 map_size_default = args["map_size"]
 
-### THIS WILL BE REMOVED
+
+# crete output path if not set
 if out_path == "":
     out_path = os.getcwd() + "/data/output/run_" + str(time.time())[:-8]
     if not os.path.exists(out_path):
         os.makedirs(out_path)
-###
 
 
 if DEBUG:
@@ -99,7 +99,6 @@ size_x = max_x - min_x
 map_size = (size_z, size_x, 3)
 origin = (-min_x, -min_z)
 
-# gt_map = np.full((mapsize, mapsize, 3), 255, dtype=np.uint8)
 track_map = np.full(map_size, 255, dtype=np.uint8)
 updated_gt_map = np.full(map_size, 255, dtype=np.uint8)
 if MODE == "kitti":
@@ -108,7 +107,6 @@ if MODE == "kitti":
 # initialize poses
 old_gt_pose = np.eye(3, 4, dtype=np.float64)
 old_agent_pose = np.eye(3, 4, dtype=np.float64)
-errors = []
 
 est_poses = []
 gt_poses = []
@@ -118,7 +116,7 @@ abs_scale = 1
 
 start_time = time.time()
 
-for tqdm_idx in tqdm(range(STEPS)):
+for tqdm_idx in tqdm(range(STEPS // FRAMESKIP)):
 
     if MODE == "video":
         for i in range(FRAMESKIP):
@@ -130,36 +128,28 @@ for tqdm_idx in tqdm(range(STEPS)):
     if MODE == "kitti":
         for i in range(FRAMESKIP):
             frame, gt_pose = kl.next_frame()
-        # updated_gt_map = update_map(gt_pose, gt_map)
         # compute absolute scale from ground truth
         abs_scale = np.linalg.norm(old_gt_pose[:, 3] - gt_pose[:, 3])
 
+    # compute agent pose
     agent_pose = odo.next_frame(frame, abs_scale)[:-1]
 
     est_poses.append(copy(agent_pose))
     gt_poses.append(copy(gt_pose))
-    # out = compute_relative_pose_error(copy(est_poses), copy(gt_poses))
-    # print(out)
-    # if (tqdm_idx + 1) % 100000 == 0:
-    #     breakpoint()
+
     # error evaluation
     err = compute_error(agent_pose, gt_pose, old_agent_pose, old_gt_pose)
     errors.append(err)
 
-    # err = eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose)
-
     old_gt_pose = gt_pose.copy()
     old_agent_pose = agent_pose.copy()
 
-    # TODO: make error evalluation rotation invariant
-    # TODO: add performance evaluation
-    # TODO: remember in a monocular system we can only estimate t up to a scale factor
     if DEBUG:
         color = (0, 200, 0)
+        # modulate color according to error
         color = get_color(err, range=(0, 1))
-        # print("error: ", err)
+
         updated_track_map = update_map(agent_pose, track_map, origin, color)
-        # cv.imshow("gt_map", np.hstack([updated_gt_map, updated_track_map]))
         cv.imshow("gt_map", updated_track_map)
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
@@ -168,8 +158,8 @@ run_time = time.time() - start_time
 
 steps_sec = STEPS / run_time
 
-# only runs if output path is set
 if MODE == "kitti":
+    # only runs if output path is set
     if out_path != "":
         save_metrics(
             est_poses,

@@ -6,6 +6,8 @@ from copy import copy
 
 from kitti_loader import KittiLoader
 
+# consts for feature matching
+# as well as reverse lookup
 ORB_BF_SORT = 0
 ORB_FLANN_LOWE = 1
 SIFT_FLANN_SORT = 2
@@ -41,11 +43,11 @@ def rotationMatrixToEulerAngles(R) -> np.ndarray:
 
     Parameters
     ----------
-    R (ndarray): Rotation matrix
+    - R (ndarray): Rotation matrix
 
     Returns
     -------
-    ndarray: Euler angles
+    - ndarray: Euler angles
     """
     sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
 
@@ -63,26 +65,23 @@ def rotationMatrixToEulerAngles(R) -> np.ndarray:
     return np.array([x, y, z])
 
 
-def eval_error(old_gt_pose, gt_pose, old_agent_pose, agent_pose):
-
-    gt_diff = (old_gt_pose - gt_pose)[:, 3]
-    agent_diff = (old_agent_pose - agent_pose)[:, 3]
-
-    Ra = agent_pose[:, :3]
-    Rg = gt_pose[:, :3]
-
-    new_a = Ra.T @ agent_diff
-    new_g = Rg.T @ gt_diff
-    new_err = np.linalg.norm(new_g - new_a)
-
-    err = np.linalg.norm(gt_diff - agent_diff)
-
-    return new_err
-
-
 def update_map(pose, map, origin, color=(255, 255, 0)):
+    """
+    Update the map with the current pose
 
-    # extract x, y, z from pose as well as rotation
+    Parameters
+    ----------
+    - pose (ndarray): Current pose
+    - map (ndarray): Map to update
+    - origin (tuple): Origin of the map
+    - color (tuple): Color of the trace
+
+    Returns
+    -------
+    - ndarray: Updated map
+    """
+
+    # extract x and z from pose as well as rotation
     x, _, z = pose.T[-1]
     R = pose.T[:3].T
 
@@ -136,6 +135,20 @@ def update_map(pose, map, origin, color=(255, 255, 0)):
 
 
 def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
+    """
+    Draw the ground truth map
+
+    Parameters
+    ----------
+    - map (ndarray): Map to draw on
+    - origin (int): Origin of the map
+    - kl (KittiLoader): KittiLoader object
+
+    Returns
+    -------
+    - ndarray: Updated map
+    """
+
     for i in range(0, len(kl.poses)):
         pose = kl.poses[i]
         x, _, z = pose.T[-1]
@@ -152,6 +165,18 @@ def draw_gt_map(map: np.ndarray, origin: int, kl: KittiLoader):
 
 
 def draw_maps(all_poses, no_gt=False):
+    """
+    Draw the maps for all the runs in all_poses
+
+    Parameters
+    ----------
+    - all_poses (list): List of lists of poses (one for each run)
+    - no_gt (bool): Flag to indicate if ground truth is not available
+
+    Returns
+    -------
+    - ndarray: Updated map
+    """
 
     colors = [
         (255, 0, 0),  # Red
@@ -168,6 +193,8 @@ def draw_maps(all_poses, no_gt=False):
         (0, 128, 128),  # Teal
     ]
 
+    # computes map extremes and prepare canvas
+
     max_x = 0
     min_x = np.inf
     max_z = 0
@@ -179,7 +206,7 @@ def draw_maps(all_poses, no_gt=False):
         min_x = min(min_x, int(np.array(poses)[:, 3].min()))
         max_z = max(max_z, int(np.array(poses)[:, 11].max()))
         min_z = min(min_z, int(np.array(poses)[:, 11].min()))
-    # create and prepare maps
+
     margin = 50
     max_x += margin
     min_x -= margin
@@ -192,6 +219,7 @@ def draw_maps(all_poses, no_gt=False):
     origin = (-min_x, -min_z)
     map = np.full(map_size, 255, dtype=np.uint8)
 
+    # draw starting point
     x = all_poses[0][0][3]
     z = all_poses[0][0][11]
     map = cv.circle(
@@ -202,6 +230,7 @@ def draw_maps(all_poses, no_gt=False):
         (size_z * size_x) // 20000,
     )
 
+    # draw all poses
     for idx, poses in enumerate(all_poses):
         for pose in poses:
             x = pose[3]
@@ -225,7 +254,15 @@ def draw_maps(all_poses, no_gt=False):
 
 def get_color(err, range=(0, 1)):
     """
-    Get color based on error value
+    Get color based on error value, ranging between green and red
+
+    Parameters
+    ----------
+    - err (float): Error value
+
+    Returns
+    -------
+    - tuple: BGR color
     """
     B = 0
     G = min(int(255 - (err - range[0]) / (range[1] - range[0]) * 255), 255)

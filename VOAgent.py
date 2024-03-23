@@ -33,13 +33,14 @@ class VOAgent:
 
         Parameters
         ----------
-        mtx (ndarray): Camera matrix
-        dist (ndarray): Distortion coefficients
-        buf_size (int): Frames buffer size
-        matcher_method (int): Feature matching method
-        scale_factor (float): Scale factor for images
-        denoise (int): Amount of blur to apply to the images (should be positive and odd)
-        debug (bool): Flag to enable image debugging
+        - mtx (ndarray): Camera matrix
+        - dist (ndarray): Distortion coefficients
+        - buf_size (int): Frames buffer size
+        - matcher_method (int): Feature matching method
+        - num_feat (int): Cap number of features to extract
+        - scale_factor (float): Scale factor for images
+        - denoise (int): Amount of blur to apply to the images (should be positive and odd)
+        - debug (bool): Flag to enable image debugging
         """
         self.prevFrame = None
         self.prevDes = None
@@ -67,15 +68,13 @@ class VOAgent:
 
         Parameters
         ----------
-        nextFrame (ndarray): frame to be processed
-        abs_scale (float): absolute scale if provided from ground truth
+        - nextFrame (ndarray): frame to be processed
+        - abs_scale (float): absolute scale if provided from ground truth
 
         Returns
         -------
-        ndarray: The updated agent world position
+        - ndarray: The updated agent world position
         """
-
-        # fill frames buffer
 
         img2 = cv.cvtColor(nextFrame, cv.COLOR_BGR2GRAY)
 
@@ -85,7 +84,7 @@ class VOAgent:
         if self.denoise > 0:
             img2 = cv.GaussianBlur(img2, (self.denoise, self.denoise), 0)
 
-        # undistort images id dist vector is present
+        # undistort images if dist vector is present
         if not self.dist is None:
             uimg2 = cv.undistort(img2, self.mtx, self.dist)
         else:
@@ -105,8 +104,8 @@ class VOAgent:
         elif self.matcher_method == SIFT_FLANN_LOWE:
             matcher = self.SIFT_FLANN_LOWE
 
+        # if first frame, just store the descriptor and return
         if self.prevDes is None:
-
             self.prevFrame = uimg2
             pFrame1, pFrame2, self.prevKp, self.prevDes = matcher(
                 None,
@@ -116,7 +115,7 @@ class VOAgent:
             )
             return np.eye(4, 4, dtype=np.float64)
 
-        # get matched points
+        # get matched points and store new descriptor
         pFrame1, pFrame2, self.prevKp, self.prevDes = matcher(
             self.prevKp,
             self.prevDes,
@@ -130,7 +129,7 @@ class VOAgent:
         # update agent position
         pose = self.position.update_pos(R, t, bad_data, abs_scale)
 
-        self.prevFrame = nextFrame
+        self.prevFrame = uimg2
         return pose
 
     def epipolar_computation(self, pFrame1, pFrame2) -> tuple:
@@ -159,9 +158,6 @@ class VOAgent:
                 method=cv.RANSAC,
             )
 
-            # TODO: pick better solution
-            # _, R, t, mask = cv.recoverPose(E, pFrame1, pFrame2)
-            # t = t[:, 0]
             R, t = self.decomp_essential_mat(
                 E,
                 np.array(pFrame1, dtype=np.float32),
@@ -170,6 +166,7 @@ class VOAgent:
                 self.proj,
             )
 
+            # if translation is too large something is wrong, discard
             if abs(t.mean()) > 10:
                 bad_data = True
         else:
@@ -184,15 +181,15 @@ class VOAgent:
 
         Parameters
         ----------
-        E (ndarray): Essential matrix
-        q1 (ndarray): The good keypoints matches position in i-1'th image
-        q2 (ndarray): The good keypoints matches position in i'th image
-        mtx (ndarray): The camera intrinsic matrix
-        initP (ndarray): Initial projection matrix
+        - E (ndarray): Essential matrix
+        - q1 (ndarray): The good keypoints matches position in i-1'th image
+        - q2 (ndarray): The good keypoints matches position in i'th image
+        - mtx (ndarray): The camera intrinsic matrix
+        - initP (ndarray): Initial projection matrix
 
         Returns
         -------
-        right_pair (list): Contains the rotation matrix and translation vector
+        - right_pair (list): Contains the rotation matrix and translation vector
         """
 
         # Decompose the essential matrix
@@ -228,17 +225,17 @@ class VOAgent:
 
         Parameters
         ----------
-        R (ndarray): Rotation matrix
-        t (ndarray): Translation vector
-        mtx (ndarray): The camera intrinsic matrix
-        q1 (ndarray): The good keypoints matches position in i-1'th image
-        q2 (ndarray): The good keypoints matches position in i'th image
-        initP (ndarray): Initial projection matrix
+        - R (ndarray): Rotation matrix
+        - t (ndarray): Translation vector
+        - mtx (ndarray): The camera intrinsic matrix
+        - q1 (ndarray): The good keypoints matches position in i-1'th image
+        - q2 (ndarray): The good keypoints matches position in i'th image
+        - initP (ndarray): Initial projection matrix
 
         Returns
         -------
-        sum_of_pos_z_Q1 + sum_of_pos_z_Q2 (int): Number of points in front of the cameras
-        relative_scale (float): The relative scale
+        - sum_of_pos_z_Q1 + sum_of_pos_z_Q2 (int): Number of points in front of the cameras
+        - relative_scale (float): The relative scale
         """
         # Get the transformation matrix
         T = np.eye(4, dtype=np.float64)
@@ -250,7 +247,7 @@ class VOAgent:
 
         # Triangulate the 3D points w.r.t. the first camera
         hom_Q1 = cv.triangulatePoints(initP, P, q1.T, q2.T)
-        # Also seen from cam 2
+        # Also seen from "cam 2"
         hom_Q2 = np.matmul(T, hom_Q1)
 
         # Un-homogenize
@@ -278,18 +275,17 @@ class VOAgent:
 
         return sum_of_pos_z_Q1 + sum_of_pos_z_Q2, relative_scale
 
-    # TODO: refine code for feature matching
-
     def draw_matches(self, img1, kp1, img2, kp2, good):
         """
         Draw matches between two images
 
         Parameters
         ----------
-        img1 (ndarray): First image
-        kp1 (ndarray): Keypoints in first image
-        img2 (ndarray): Second image
-        kp2 (ndarray): Keypoints in second image
+        - img1 (ndarray): First image
+        - kp1 (ndarray): Keypoints in first image
+        - img2 (ndarray): Second image
+        - kp2 (ndarray): Keypoints in second image
+        - good (list): List of good matches
         """
         if self.debug:
             img3 = cv.drawMatchesKnn(
@@ -305,6 +301,24 @@ class VOAgent:
             cv.imshow("feature_matching", img3)
 
     def SIFT_BF_LOWE(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the SIFT feature detector, bruteforce matcher and Lowe's ratio test
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
+
         # Initiate SIFT detector
         sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
@@ -317,8 +331,8 @@ class VOAgent:
         bf = cv.BFMatcher()
         matches = bf.knnMatch(des1, des2, k=2)
 
+        # Lowe's ratio test
         good = []
-
         for m, n in matches:
             if m.distance < 0.6 * n.distance:
                 good.append([m])
@@ -331,6 +345,23 @@ class VOAgent:
         return pFrame1, pFrame2, kp2, des2
 
     def SIFT_FLANN_LOWE(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the SIFT feature detector, FLANN matcher and Lowe's ratio test
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
         # Initiate SIFT detector
         sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
@@ -348,11 +379,12 @@ class VOAgent:
         search_params = {}  # or pass empty dictionary
         flann = cv.FlannBasedMatcher(index_params, search_params)
         matches = flann.knnMatch(des1, des2, k=2)
-        # matches = flann.match(des1, des2)
+
         # Need to draw only good matches, so create a mask
         matchesMask = [[0, 0] for i in range(len(matches))]
-        good = []
+
         # ratio test as per Lowe's paper
+        good = []
         for i, (m, n) in enumerate(matches):
             if m.distance < 0.6 * n.distance:
                 matchesMask[i] = [1, 0]
@@ -366,6 +398,23 @@ class VOAgent:
         return pFrame1, pFrame2, kp2, des2
 
     def SIFT_FLANN_SORT(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the SIFT feature detector, FLANN matcher and sorting
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
         # Initiate SIFT detector
         sift = cv.SIFT_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with SIFT
@@ -398,6 +447,23 @@ class VOAgent:
         return pFrame1, pFrame2, kp2, des2
 
     def ORB_BF_LOWE(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the ORB feature detector, bruteforce matcher and Lowe's ratio test
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
         orb = cv.ORB_create(nfeatures=self.num_feat)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(nextFrame, None)
@@ -413,9 +479,6 @@ class VOAgent:
         # each DMatch object contains the indices of the descriptors in the two images that match and the distance between them
         matches = bf.knnMatch(des1, des2, k=2)
 
-        # Sort them in the order of their distance.
-        # matches = sorted(matches, key=lambda x: x.distance)
-
         # Apply ratio test
         good = []
         for m, n in matches:
@@ -430,6 +493,23 @@ class VOAgent:
         return pFrame1, pFrame2, kp2, des2
 
     def ORB_BF_SORT(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the ORB feature detector, bruteforce matcher and sorting
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
         orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
         kp2, des2 = orb.detectAndCompute(nextFrame, None)
@@ -460,6 +540,23 @@ class VOAgent:
         return pFrame1, pFrame2, kp2, des2
 
     def ORB_FLANN_LOWE(self, kp1, des1, prevFrame, nextFrame):
+        """
+        This function uses the ORB feature detector, FLANN matcher and Lowe's ratio test
+
+        Parameters
+        ----------
+        - kp1 (ndarray): Keypoints from previous frame
+        - des1 (ndarray): Descriptors from previous frame
+        - prevFrame (ndarray): Previous frame (only used for debugging)
+        - nextFrame (ndarray): Next frame
+
+        Returns
+        -------
+        - pFrame1 (ndarray): Points from previous frame
+        - pFrame2 (ndarray): Points from next frame
+        - kp2 (ndarray): Keypoints from next frame
+        - des2 (ndarray): Descriptors from next frame
+        """
         # Initiate ORB detector
         orb = cv.ORB_create(nfeatures=self.num_feat, scoreType=cv.ORB_FAST_SCORE)
         # find the keypoints and descriptors with ORB
@@ -480,11 +577,7 @@ class VOAgent:
 
         flann = cv.FlannBasedMatcher(index_params, search_params)
 
-        # Added this per the Q & A
         if des1 is not None and len(des1) > 2 and des2 is not None and len(des2) > 2:
-            # breakpoint()
-            # des1 = np.float32(des1)
-            # des2 = np.float32(des2)
             matches = flann.knnMatch(des1, des2, k=2)
 
         # Store the Keypoint Matches that Pass Lowe's Ratio Test
