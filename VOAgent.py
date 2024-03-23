@@ -122,6 +122,8 @@ class VOAgent:
             self.prevFrame,
             uimg2,
         )
+        # if len(self.prevDes) > 5000:
+        #     print(len(self.prevDes))
 
         # extract rotation and translation
         R, t, bad_data = self.epipolar_computation(pFrame1, pFrame2)
