@@ -10,8 +10,8 @@ Project for Signal Image and Video, UniTN
 </div>
 
 ## About
-The goal of the project is to build a Monocular Visual Odometry system from scratch, without the assistance of machine learning or neural networks, relaying only traditional computer vision tecniques. 
-The main objective is to construct a robust system that can be used on different kinds of cameras by providing an easy to use pipeline that goes from calibration to exploration.
+The goal of the project is to build a Monocular Visual Odometry system from scratch, without the assistance of machine learning or neural networks, relaying only traditional computer vision techniques. 
+The main objective is to construct a robust system that can be used on different kinds of cameras by providing an easy-to-use pipeline that goes from calibration to exploration.
 
 <br>
 <div style="text-align:center;">
@@ -21,7 +21,7 @@ The main objective is to construct a robust system that can be used on different
 
 ## General Information
 
-The project is entirely built in python and, while for many tasks we relayed on third party libraries such as OpenCV, we made sure to implements as many components as possible from scratch, deep diving into the logic that goes behind a full VO system. For our benchmarks we used [KITTI](https://www.cvlibs.net/datasets/kitti/) as well as clips recorded by the team.
+The project is entirely built in Python and, while for many tasks we relayed on third-party libraries such as OpenCV, we made sure to implement as many components as possible from scratch, deep diving into the logic that goes behind a full VO system. For our benchmarks, we used [KITTI](https://www.cvlibs.net/datasets/kitti/) as well as clips recorded by the team.
 
 ### Project Structure
 
@@ -75,7 +75,7 @@ The project is entirely built in python and, while for many tasks we relayed on 
 
 ## Usage
 
-For a **quick start** it's highly recommended to use the lighter version of the KITTI dataset, available at the Google Drive link below and follow the instructions in the next section!
+For a **quick start**, it's highly recommended to use the lighter version of the KITTI dataset, available at the Google Drive link below, and follow the instructions in the next section!
 
 Install requirements
 
@@ -86,9 +86,9 @@ pip install -r requirements.txt
 ### With KITTI
 Download and extract <a href=https://www.cvlibs.net/datasets/kitti/eval_odometry.php>KITTI visual odometry</a> datasets in the <i>data</i> folder
 
-The full 22GB dataset with all 22 sequences is aviable at this link: <a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>. 
+The full 22GB dataset with all 22 sequences is available at this link: <a href=https://www.cvlibs.net/datasets/kitti/user_login.php>KITTI image data</a>. 
 
-A lighter 225MB version containig only sequence 22 is available at this link on <a href="https://drive.google.com/drive/folders/1lh0QLIo15Rr3JK6u5jNcgM2uX-k4pOK9?usp=sharing">Google Drive</a>.
+A lighter 225MB version containing only sequence 22 is available at this link on <a href="https://drive.google.com/drive/folders/1lh0QLIo15Rr3JK6u5jNcgM2uX-k4pOK9?usp=sharing">Google Drive</a>.
 
 ```
 data/data_odometry_gray
@@ -107,7 +107,7 @@ python vo.py -m kitti -s 22
 
 ### With videos
 
-To run in video mode a camera calibration file must be provieded. The camera calibration file can be obtained using <i>camera_calibration_charuco.py</i> and the ChAruCo pattern inside the camera_data folder
+To run in video mode a camera calibration file must be provided. The camera calibration file can be obtained using <i>camera_calibration_charuco.py</i> and the ChAruCo pattern inside the camera_data folder
 
 ```
 python vo.py -m video -cp {calib/file/path.json} -vp {video/path.mp4}
@@ -115,13 +115,12 @@ python vo.py -m video -cp {calib/file/path.json} -vp {video/path.mp4}
 
 
 ### General Controls
-
-To the script can be provided the number of frames to analyze (default -1 means the entire length)
+The script can be provided with the number of frames to analyze (default -1 means the entire length)
 
 ```
 python vo.py -m kitti -s 2 -st 100
 ```
-As well as the feature matching method used as combinations of SIFT, ORB and either bruteforce or FLANN plus some more
+As well as the feature matching method used as combinations of SIFT, ORB, and either brute force or FLANN plus some more
 
 ```
 python vo.py -m kitti -s 2 -fm 2
@@ -168,15 +167,15 @@ camera_calibration_charuco.py -v {video/path.mp4} -O {output/file/path.json}
 
 ### Calibration guidelines
 
-- it's **very important** to keep the same camera configuration for calibration and testing. If the camera has auto-focus, auto-exposure, auto-white balance, etc. it's recommended to disable them, if the focus of the camera is changes after calibration the calibration file will be invalid and it's highly recommended to recalibrate the camera.
+- it's **very important** to keep the same camera configuration for calibration and testing. If the camera has auto-focus, auto-exposure, auto-white balance, etc. it's recommended to disable them, if the focus of the camera is changed after calibration the calibration file will be invalid and it's highly recommended to recalibrate the camera.
 - Put the calibration pattern on a surface **as flat as possible**, if the calibration pattern is not flat the calibration will be skewed, use a computer screen or a TV if available.
-- During calibration the pattern should cover around half of the camera frame, make sure to cover the entire frame with the calibration pattern. Remember to cover the edges of the frame, the ChArUco board allows to calibrate the camera even if the calibration pattern is not completely visible.
+During calibration, the pattern should cover around half of the camera frame, make sure to cover the entire frame with the calibration pattern. Remember to cover the edges of the frame, the ChArUco board allows to calibrate the camera even if the calibration pattern is not completely visible.
 - **Avoid reflections** on the calibration pattern, reflections can cause the calibration to be invalid.
 - Get a wide range of angles and move slowly when calibrating
 
 ## Testing
 
-In the tests folder we provided a range of scripts to test the system using differtent configurations and datasets. The main script is <i>test_runs.py</i> that runs the system on the KITTI dataset and compares the results with the ground truth poses as well as a version that runs the system on a video file.
+In the tests folder, we provided a range of scripts to test the system using different configurations and datasets. The main script is <i>test_runs.py</i> which runs the system on the KITTI dataset and compares the results with the ground truth poses as well as a version that runs the system on a video file.
 
 To run the tests over KITTI simply set the desired combinations of parameters in the script and run it
 
@@ -199,7 +198,7 @@ The tests run over normal videos will obviously not contain error estimation due
 test_runs_video.py
 ```
 
-The script compare results.py can be used to compare the results of two different runs, it will output a plot of the estimated poses of the runs and and create a output.csv file containing all the data from all the eval folders in the runs.
+The script compares results.py can be used to compare the results of two different runs, it will output a plot of the estimated poses of the runs and create an output.csv file containing all the data from all the eval folders in the runs.
 
 ```
 compare_results.py -p {data/output/run_12345} 
