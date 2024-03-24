@@ -231,7 +231,8 @@ If the path is not provided, the script will automatically pick the latest run.
 - <strike>provide instructions for camera calibration</strike>
 
 
-## Authors 
+## Contacts 
 
 - [@lorenzoorsingher](https://github.com/lorenzoorsingher)
 - [@iiics](https://github.com/iiics)
+- [GitHub repo](https://github.com/lorenzoorsingher/SIV_project)
