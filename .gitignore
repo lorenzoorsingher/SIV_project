@@ -1,11 +1,13 @@
 data/*
-output/*
 .DS_Store
 *.pyc
 *.png
 *.mp4
 
+
 !data/data_odometry_poses/
+!data/output/.output
+
 !images/*
 
 sivenv/
