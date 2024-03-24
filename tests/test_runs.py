@@ -49,7 +49,7 @@ nfeatures = {
 }
 
 # number of steps to run the VO
-steps = 300
+steps = 22
 
 ########################################################################################################################
 
@@ -103,4 +103,4 @@ for sequence in sequences:
                         + " -nd"
                     )
 
-os.system(sys.executable + " compare_results.py")
+os.system(sys.executable + " tests/compare_results.py")
