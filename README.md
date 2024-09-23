@@ -1,4 +1,4 @@
-# CAFTP (Cool Acronym For The Project)
+# CAVO – Camera Agnostic Visual Odometry
 
 Project for Signal Image and Video, UniTN
 
