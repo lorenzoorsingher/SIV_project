@@ -46,6 +46,7 @@ if out_path == "":
 if DEBUG:
     cv.namedWindow("gt_map", cv.WINDOW_NORMAL)
 
+first = 0
 
 if MODE == "video":
 
@@ -150,9 +151,19 @@ for tqdm_idx in tqdm(range(STEPS // FRAMESKIP)):
         color = get_color(err, range=(0, 1))
 
         updated_track_map = update_map(agent_pose, track_map, origin, color)
-        cv.imshow("gt_map", updated_track_map)
+        frameres = cv.resize(
+            frame,
+            (
+                int(frame.shape[1] * (updated_track_map.shape[0] / frame.shape[0])),
+                updated_track_map.shape[0],
+            ),
+        )
+        cv.imshow("gt_map", np.hstack([updated_track_map, frameres]))
         cv.imwrite("output/map_" + str(tqdm_idx) + ".png", updated_track_map)
         cv.waitKey(1)
+    first += 1
+    if first == 2:
+        cv.waitKey(0)
 
 run_time = time.time() - start_time
 
