@@ -26,7 +26,7 @@ The main objective is to construct a robust system that can be used on different
     <p>The project is entirely built in Python and, while for many tasks we relayed on third-party libraries such as OpenCV, we made sure to implement as many components as possible from scratch, deep diving into the logic that goes behind a full VO system. For our benchmarks, we used <a href="https://www.cvlibs.net/datasets/kitti/">KITTI</a> as well as clips recorded by the team.</p>
   </div>
   <div style="flex: 1; text-align: center;">
-    <a href="https://github.com/lorenzoorsingher/SIV_project/blob/main/report_SIV_Orsingher_Rocchi.pdf"><img src="images/cover.png" width="50%"></a>
+    <a href="https://github.com/lorenzoorsingher/SIV_project/blob/main/report_SIV_Orsingher_Rocchi.pdf"><img src="images/cover.png" width="200px"></a>
     <p>|Click here to download report|</p>
   </div>
 </div>
